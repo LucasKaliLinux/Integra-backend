@@ -44,7 +44,7 @@ class StoreAcaoRequest extends FormRequest
                 Rule::exists('municipios', 'id_municipio')
             ],
             'valor' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
-            'ano' => ['required', 'integer', 'digits:4', 'min:2000', 'max:2050'],
+            'ano' => ['required', 'integer', 'digits:4', 'min:1900', 'max:2050'],
             'status_id' => [
                 'required',
                 'integer',

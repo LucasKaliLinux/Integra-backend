@@ -23,8 +23,11 @@ class CacheHelper
             Cache::forget($key);
         }
 
-        // ⬇️ ADICIONA: Invalida dashboard também!
+        // Invalida dashboard também
         self::invalidarDashboard($userId);
+        
+        // ⬇️ NOVO: Invalida metadados de ações
+        self::invalidarMetadados($userId);
     }
 
     /**
@@ -36,13 +39,35 @@ class CacheHelper
     }
 
     /**
+     * ⬇️ NOVO: Invalida metadados de ações (min/max ano e valor)
+     */
+    public static function invalidarMetadados(int $userId): void
+    {
+        Cache::forget("acoes_metadata_{$userId}");
+    }
+
+    /**
+     * ⬇️ NOVO: Invalida cache de importação Excel
+     */
+    public static function invalidarExcelTemplate(int $userId): void
+    {
+        Cache::forget("excel_template_data_{$userId}");
+    }
+
+    /**
      * Invalida TUDO relacionado ao usuário
-     * (Útil quando faz mudanças grandes tipo sync de municípios)
+     * (Útil quando faz mudanças grandes tipo sync de municípios ou importação em massa)
      */
     public static function invalidarTudo(int $userId): void
     {
         // Invalida dashboard
         self::invalidarDashboard($userId);
+
+        // ⬇️ NOVO: Invalida metadados
+        self::invalidarMetadados($userId);
+
+        // ⬇️ NOVO: Invalida dados do template Excel
+        self::invalidarExcelTemplate($userId);
 
         // Invalida ano base (usado em várias queries)
         $tituloEleitoral = \App\Models\User::find($userId)?->titulo_eleitoral;
@@ -50,7 +75,7 @@ class CacheHelper
             Cache::forget("ano_base_{$tituloEleitoral}");
         }
 
-        // Invalida candidatos de municípios (se usar)
-        // Cache::forget("candidatos_municipio_*"); // Não funciona com file driver
+        // Nota: Cache::forget não suporta wildcards com file driver
+        // Se usar Redis, poderia fazer: Cache::tags(['user_'.$userId])->flush();
     }
 }

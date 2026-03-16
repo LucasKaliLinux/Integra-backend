@@ -20,6 +20,45 @@ class AuthController extends Controller
     //     ]);
     // }
 
+    public function metadata(Request $request)
+    {
+        $user = $request->user();
+
+        $dados = Cache::remember("acoes_metadata_{$user->id}", 1800, function() use ($user) {
+            
+            $stats = $user->acoes()
+                ->selectRaw('
+                    MIN(ano) as ano_min,
+                    MAX(ano) as ano_max,
+                    MIN(valor) as valor_min,
+                    MAX(valor) as valor_max,
+                    COUNT(*) as total_acoes
+                ')
+                ->first();
+
+            // Se não tiver ações, retorna valores padrão
+            if (!$stats || $stats->total_acoes === 0) {
+                return [
+                    'ano_min' => date('Y') - 5,
+                    'ano_max' => date('Y'),
+                    'valor_min' => 0,
+                    'valor_max' => 1000000,
+                    'total_acoes' => 0
+                ];
+            }
+
+            return [
+                'ano_min' => (int) $stats->ano_min,
+                'ano_max' => (int) $stats->ano_max,
+                'valor_min' => (float) $stats->valor_min,
+                'valor_max' => (float) $stats->valor_max,
+                'total_acoes' => (int) $stats->total_acoes
+            ];
+        });
+
+        return response()->json($dados);
+    }
+
     public function login(LoginRequest $request){
 
         if (!Auth::attempt($request->validated())) {

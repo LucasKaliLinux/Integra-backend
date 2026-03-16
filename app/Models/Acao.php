@@ -74,23 +74,70 @@ class Acao extends Model
     public function scopeFilter($query, $filters)
     {
         return $query
-            ->when($filters['cidade'] ?? null, fn ($q, $v) =>
+            // Município
+            ->when($filters['municipio'] ?? null, fn ($q, $v) =>
                 $q->where('id_municipio', $v)
             )
+            
+            // Status
             ->when($filters['status'] ?? null, fn ($q, $v) =>
                 $q->where('status_id', $v)
             )
+            
+            // Ano (exato ou faixa)
             ->when($filters['ano'] ?? null, fn ($q, $v) =>
                 $q->where('ano', $v)
             )
+            ->when($filters['ano_min'] ?? null, fn ($q, $v) =>
+                $q->where('ano', '>=', $v)
+            )
+            ->when($filters['ano_max'] ?? null, fn ($q, $v) =>
+                $q->where('ano', '<=', $v)
+            )
+            
+            // Valor (faixa)
+            ->when($filters['valor_min'] ?? null, fn ($q, $v) =>
+                $q->where('valor', '>=', $v)
+            )
+            ->when($filters['valor_max'] ?? null, fn ($q, $v) =>
+                $q->where('valor', '<=', $v)
+            )
+            
+            // Órgão
             ->when($filters['orgao'] ?? null, fn ($q, $v) =>
                 $q->where('orgao_governo_id', $v)
             )
+            
+            // Categoria
             ->when($filters['categoria'] ?? null, fn ($q, $v) =>
                 $q->where('categoria_investimento_id', $v)
             )
+            
+            // Tipo de Ação
+            ->when($filters['tipo_acao'] ?? null, fn ($q, $v) =>
+                $q->where('tipo_acao_id', $v)
+            )
+            
+            // Esfera (Federal/Estadual) - via relacionamento
+            ->when($filters['esfera'] ?? null, fn ($q, $v) =>
+                $q->whereHas('orgao.tipoOrgao.esferaGoverno', fn ($subQ) =>
+                    $subQ->where('id', $v)
+                )
+            )
+            
+            // Tipo de Órgão (Ministério, Autarquia, etc) - via relacionamento
+            ->when($filters['tipo_orgao'] ?? null, fn ($q, $v) =>
+                $q->whereHas('orgao.tipoOrgao', fn ($subQ) =>
+                    $subQ->where('id', $v)
+                )
+            )
+            
+            // Busca textual (título ou N° SEI)
             ->when($filters['search'] ?? null, fn ($q, $v) =>
-                $q->where('titulo', 'like', "%{$v}%")
+                $q->where(fn ($subQ) =>
+                    $subQ->where('titulo', 'like', "%{$v}%")
+                        ->orWhere('numero_sei', 'like', "%{$v}%")
+                )
             );
     }
 }

@@ -10,6 +10,8 @@ use App\Http\Controllers\EsferaGovernoController;
 use App\Http\Controllers\EstrategiaController;
 use App\Http\Controllers\EstrategiaLiderancaController;
 use App\Http\Controllers\EstrategiaMunicipioController;
+use App\Http\Controllers\ExcelAcaoController;
+use App\Http\Controllers\ImportAcaoController;
 use App\Http\Controllers\LiderancaController;
 use App\Http\Controllers\MunicipioController;
 use App\Http\Controllers\OrgaoGovernoController;
@@ -31,6 +33,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/dashboard', [AuthController::class, 'dashboard']);
+    Route::get('/me/metadata', [AuthController::class, 'metadata']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/municipios', [MunicipioController::class, 'index']);
@@ -49,12 +52,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/cargos', [CargoController::class, 'index']);
 
     Route::apiResource('acoes', AcaoController::class);
-    Route::apiResource('/liderancas', LiderancaController::class);
+    Route::apiResource('liderancas', LiderancaController::class);
 
-    // Upload de instrumento
-    Route::post('acoes/{id}/upload-instrumento', [AcaoController::class, 'uploadInstrumento']);
-    Route::delete('acoes/{id}/instrumento', [AcaoController::class, 'deleteInstrumento']);
-    Route::get('acoes/{id}/instrumento', [AcaoController::class, 'downloadInstrumento']);
+    Route::prefix('/acoes')->group(function() {
+
+        // Upload de instrumento
+        Route::post('/{id}/upload-instrumento', [AcaoController::class, 'uploadInstrumento']);
+        Route::delete('/{id}/instrumento', [AcaoController::class, 'deleteInstrumento']);
+        Route::get('/{id}/instrumento', [AcaoController::class, 'downloadInstrumento']);
+
+        // upload de ações
+        Route::post('/import', [ImportAcaoController::class, 'store']);
+        Route::get('/import/{id}', [ImportAcaoController::class, 'show']);
+        Route::get('/imports', [ImportAcaoController::class, 'index']);
+    });
 
     Route::prefix('/me/estrategia')->group(function() {
 
