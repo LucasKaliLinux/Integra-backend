@@ -73,6 +73,7 @@ class StoreAcaoRequest extends FormRequest
             'categoria_investimento_id.required' => 'Selecione uma categoria de investimento.',
             'tipo_acao_id.required' => 'Selecione o tipo da ação.',
             'titulo.required' => 'O título da ação é obrigatório.',
+            'numero_sei.required' => 'O SEI é obrigatorio',
             'id_municipio.required' => 'Selecione um município.',
             'id_municipio.exists' => 'Município não encontrado.',
             'ano.required' => 'Informe o ano da ação.',

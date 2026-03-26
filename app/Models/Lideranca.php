@@ -26,14 +26,32 @@ class Lideranca extends Model
     public function scopeFilter($query, $filters)
     {
         return $query
-            ->when($filters['cidade'] ?? null, fn ($q, $v) =>
+            // Filtro por município
+            ->when($filters['municipio'] ?? null, fn ($q, $v) =>
                 $q->where('id_municipio', $v)
             )
+            
+            // Filtro por alinhamento (aliado/oposicao)
             ->when($filters['alinhamento'] ?? null, fn ($q, $v) =>
                 $q->where('alinhamento', $v)
             )
+            
+            // Filtro por cargo (função)
+            ->when($filters['cargo'] ?? null, fn ($q, $v) =>
+                $q->where('funcao_id', $v)
+            )
+            
+            // Filtro por classificação
+            ->when($filters['classificacao'] ?? null, fn ($q, $v) =>
+                $q->where('classificacao_id', $v)
+            )
+            
+            // Busca textual (nome ou telefone)
             ->when($filters['search'] ?? null, fn ($q, $v) =>
-                $q->where('nome', 'like', "%{$v}%")
+                $q->where(fn ($subQ) =>
+                    $subQ->where('nome', 'like', "%{$v}%")
+                         ->orWhere('telefone', 'like', "%{$v}%")
+                )
             );
     }
 

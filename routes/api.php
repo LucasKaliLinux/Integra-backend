@@ -11,6 +11,7 @@ use App\Http\Controllers\EstrategiaController;
 use App\Http\Controllers\EstrategiaLiderancaController;
 use App\Http\Controllers\EstrategiaMunicipioController;
 use App\Http\Controllers\ExcelAcaoController;
+use App\Http\Controllers\ExportAcaoController;
 use App\Http\Controllers\ImportAcaoController;
 use App\Http\Controllers\LiderancaController;
 use App\Http\Controllers\MunicipioController;
@@ -65,6 +66,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/import', [ImportAcaoController::class, 'store']);
         Route::get('/import/{id}', [ImportAcaoController::class, 'show']);
         Route::get('/imports', [ImportAcaoController::class, 'index']);
+
+        Route::post('/exportar-pdf', [ExportAcaoController::class, 'store']);
+        Route::get('/exports/{id}', [ExportAcaoController::class, 'show']);
+        Route::get('/exports/{id}/download', [ExportAcaoController::class, 'download']);
+        Route::get('/exports', [ExportAcaoController::class, 'index']);
     });
 
     Route::prefix('/me/estrategia')->group(function() {

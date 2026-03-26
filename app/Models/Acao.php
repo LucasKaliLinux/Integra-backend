@@ -71,73 +71,142 @@ class Acao extends Model
     }
     
     // Scopes
-    public function scopeFilter($query, $filters)
+    public function scopeFilter($query, array $filters)
     {
-        return $query
-            // Município
-            ->when($filters['municipio'] ?? null, fn ($q, $v) =>
-                $q->where('id_municipio', $v)
-            )
-            
-            // Status
-            ->when($filters['status'] ?? null, fn ($q, $v) =>
-                $q->where('status_id', $v)
-            )
-            
-            // Ano (exato ou faixa)
-            ->when($filters['ano'] ?? null, fn ($q, $v) =>
-                $q->where('ano', $v)
-            )
-            ->when($filters['ano_min'] ?? null, fn ($q, $v) =>
-                $q->where('ano', '>=', $v)
-            )
-            ->when($filters['ano_max'] ?? null, fn ($q, $v) =>
-                $q->where('ano', '<=', $v)
-            )
-            
-            // Valor (faixa)
-            ->when($filters['valor_min'] ?? null, fn ($q, $v) =>
-                $q->where('valor', '>=', $v)
-            )
-            ->when($filters['valor_max'] ?? null, fn ($q, $v) =>
-                $q->where('valor', '<=', $v)
-            )
-            
-            // Órgão
-            ->when($filters['orgao'] ?? null, fn ($q, $v) =>
-                $q->where('orgao_governo_id', $v)
-            )
-            
-            // Categoria
-            ->when($filters['categoria'] ?? null, fn ($q, $v) =>
-                $q->where('categoria_investimento_id', $v)
-            )
-            
-            // Tipo de Ação
-            ->when($filters['tipo_acao'] ?? null, fn ($q, $v) =>
-                $q->where('tipo_acao_id', $v)
-            )
-            
-            // Esfera (Federal/Estadual) - via relacionamento
-            ->when($filters['esfera'] ?? null, fn ($q, $v) =>
-                $q->whereHas('orgao.tipoOrgao.esferaGoverno', fn ($subQ) =>
-                    $subQ->where('id', $v)
-                )
-            )
-            
-            // Tipo de Órgão (Ministério, Autarquia, etc) - via relacionamento
-            ->when($filters['tipo_orgao'] ?? null, fn ($q, $v) =>
-                $q->whereHas('orgao.tipoOrgao', fn ($subQ) =>
-                    $subQ->where('id', $v)
-                )
-            )
-            
-            // Busca textual (título ou N° SEI)
-            ->when($filters['search'] ?? null, fn ($q, $v) =>
-                $q->where(fn ($subQ) =>
-                    $subQ->where('titulo', 'like', "%{$v}%")
-                        ->orWhere('numero_sei', 'like', "%{$v}%")
-                )
-            );
+        // Município
+        if (!empty($filters['municipio'])) {
+            $query->where('acoes.id_municipio', $filters['municipio']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Status
+        if (!empty($filters['status'])) {
+            $query->where('acoes.status_id', $filters['status']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Ano específico
+        if (!empty($filters['ano'])) {
+            $query->where('acoes.ano', $filters['ano']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Ano mínimo
+        if (!empty($filters['ano_min'])) {
+            $query->where('acoes.ano', '>=', $filters['ano_min']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Ano máximo
+        if (!empty($filters['ano_max'])) {
+            $query->where('acoes.ano', '<=', $filters['ano_max']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Valor mínimo
+        if (!empty($filters['valor_min'])) {
+            $query->where('acoes.valor', '>=', $filters['valor_min']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Valor máximo
+        if (!empty($filters['valor_max'])) {
+            $query->where('acoes.valor', '<=', $filters['valor_max']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Órgão
+        if (!empty($filters['orgao'])) {
+            $query->where('acoes.orgao_governo_id', $filters['orgao']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Categoria
+        if (!empty($filters['categoria'])) {
+            $query->where('acoes.categoria_investimento_id', $filters['categoria']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Tipo de ação
+        if (!empty($filters['tipo_acao'])) {
+            $query->where('acoes.tipo_acao_id', $filters['tipo_acao']); // ⬅️ PREFIXO acoes.
+        }
+
+        // Esfera (via relationship - precisa de JOIN)
+        if (!empty($filters['esfera'])) {
+            $query->whereHas('orgao.tipoOrgao', function($q) use ($filters) {
+                $q->where('esfera_governo_id', $filters['esfera']);
+            });
+        }
+
+        // Tipo de órgão (via relationship - precisa de JOIN)
+        if (!empty($filters['tipo_orgao'])) {
+            $query->whereHas('orgao', function($q) use ($filters) {
+                $q->where('tipo_orgao_id', $filters['tipo_orgao']);
+            });
+        }
+
+        // Busca textual (título ou número SEI)
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('acoes.titulo', 'like', "%{$search}%") // ⬅️ PREFIXO acoes.
+                ->orWhere('acoes.numero_sei', 'like', "%{$search}%"); // ⬅️ PREFIXO acoes.
+            });
+        }
+
+        return $query;
+    }
+
+    public function scopeSort($query, ?string $sortBy = null, ?string $sortOrder = 'asc')
+    {
+        // Valida ordem
+        $sortOrder = strtolower($sortOrder) === 'desc' ? 'desc' : 'asc';
+
+        // Se não passou sortBy ou é inválido, usa padrão (ID = ordem de inserção)
+        if (!$sortBy) {
+            return $query->orderBy('id', 'desc'); // Padrão: mais recentes primeiro
+        }
+
+        // Ordenações diretas (colunas da própria tabela)
+        $directSorts = [
+            'titulo' => 'titulo',
+            'valor' => 'valor',
+            'ano' => 'ano'
+        ];
+
+        if (isset($directSorts[$sortBy])) {
+            return $query->orderBy($directSorts[$sortBy], $sortOrder);
+        }
+
+        // Ordenações via relacionamento
+        switch ($sortBy) {
+            case 'esfera':
+                return $query
+                    ->join('orgaos_governo as og', 'acoes.orgao_governo_id', '=', 'og.id')
+                    ->join('tipos_orgao as to', 'og.tipo_orgao_id', '=', 'to.id')
+                    ->join('esferas_governo as eg', 'to.esfera_governo_id', '=', 'eg.id')
+                    ->orderBy('eg.nome', $sortOrder)
+                    ->select('acoes.*'); // Evita conflito de colunas
+
+            case 'orgao':
+                return $query
+                    ->join('orgaos_governo as og', 'acoes.orgao_governo_id', '=', 'og.id')
+                    ->orderBy('og.nome', $sortOrder)
+                    ->select('acoes.*');
+
+            case 'categoria':
+                return $query
+                    ->join('categorias_investimento as ci', 'acoes.categoria_investimento_id', '=', 'ci.id')
+                    ->orderBy('ci.nome', $sortOrder)
+                    ->select('acoes.*');
+
+            case 'municipio':
+                return $query
+                    ->join('municipios as m', 'acoes.id_municipio', '=', 'm.id_municipio')
+                    ->orderBy('m.nome', $sortOrder)
+                    ->select('acoes.*');
+
+            case 'status':
+                return $query
+                    ->join('status_acao as sa', 'acoes.status_id', '=', 'sa.id')
+                    ->orderBy('sa.ordem', $sortOrder) // ⬅️ Ordena pela ordem lógica (1,2,3,4,5)
+                    ->select('acoes.*');
+
+            default:
+                // Se passou algo inválido, usa padrão
+                return $query->orderBy('id', 'desc');
+        }
     }
 }

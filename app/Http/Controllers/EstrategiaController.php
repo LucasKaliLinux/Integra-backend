@@ -80,6 +80,25 @@ class EstrategiaController extends Controller
     {
         $user = $request->user();
         $perPage = min($request->input('per_page', 10), 418);
+
+        $sortBy = $request->input('sort_by', 'nome'); // Padrão: nome alfabético
+        $sortOrder = $request->input('sort_order', 'asc');
+
+        // Campos permitidos para ordenação
+        $allowedSorts = [
+            'nome',
+            'populacao',
+            'total_eleitores',
+            'votos',
+            'percentual_votos'
+        ];
+
+        // Valida
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'nome';
+        }
+
+        $sortOrder = strtolower($sortOrder) === 'desc' ? 'desc' : 'asc';
     
         // Descobre ano base
         $anoBase = Cache::remember("ano_base_{$user->titulo_eleitoral}", 3600, function() use ($user) {
@@ -117,7 +136,7 @@ class EstrategiaController extends Controller
                 DB::raw('ROUND((IFNULL(v.votos, 0) / NULLIF(e.total_eleitores, 0)) * 100, 2) as percentual_votos')
             ])
             ->filter($request->all())
-            ->orderBy('municipios.nome');
+            ->orderBy($sortBy, $sortOrder);
         
         return MunicipioPortifolioResource::collection($query->paginate($perPage));
     }

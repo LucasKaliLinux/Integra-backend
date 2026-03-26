@@ -1,0 +1,672 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class MigrateOldAcoesSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // ⬇️ IDs dos placeholders (pega do banco depois de rodar PlaceholderSeeder)
+        $orgaoPlaceholder = DB::table('orgaos_governo')
+            ->where('sigla', 'A DEFINIR')
+            ->value('id');
+
+        $categoriaPlaceholder = DB::table('categorias_investimento')
+            ->where('slug', 'a-definir')
+            ->value('id');
+
+        $tipoPlaceholder = DB::table('tipos_acao')
+            ->where('slug', 'a-definir')
+            ->value('id');
+
+        $statusSolicitado = 1; // Solicitado
+        $statusEmExecucao = 4; // Em Execução
+
+        $acoesAntigas = [
+            // 1
+            [
+                'user_id' => 3,
+                'id_municipio' => 2902005,
+                'lideranca_solicitante_id' => 29,
+                'titulo' => 'Solicita cessão de 01 (um) veículo administrativo',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 12:31:24',
+                'updated_at' => '2026-03-03 12:43:00'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita dez kits apicultura para Ass. da Extrema',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 12:41:00',
+                'updated_at' => '2026-03-03 12:41:00'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita extensão de rede de água atender a comunidade',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 12:43:44',
+                'updated_at' => '2026-03-03 12:43:44'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita extensão de rede de água atender a comunidade',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:25:11',
+                'updated_at' => '2026-03-03 15:25:11'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita extensão de rede de água atender a comunidade',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:25:29',
+                'updated_at' => '2026-03-03 15:25:29'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita extensão de rede de água atender a de localidade',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:27:45',
+                'updated_at' => '2026-03-03 15:27:45'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita extensão de rede de água atender a de localidade',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:29:10',
+                'updated_at' => '2026-03-03 15:29:10'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2904605,
+                'lideranca_solicitante_id' => 25,
+                'titulo' => 'Solicita kits costura para Ass. da Extrema',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:29:42',
+                'updated_at' => '2026-03-03 15:32:47'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2909000,
+                'lideranca_solicitante_id' => 41,
+                'titulo' => 'Pista de Caminhada BA 148',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusEmExecucao,
+                'created_at' => '2026-03-03 15:30:29',
+                'updated_at' => '2026-03-03 15:30:48'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2909604,
+                'lideranca_solicitante_id' => 43,
+                'titulo' => 'Construção de Praça Pedro Pondé',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:33:29',
+                'updated_at' => '2026-03-03 15:34:30'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2909604,
+                'lideranca_solicitante_id' => 43,
+                'titulo' => 'Pavimentação em paralelepípedo na sede do município',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:34:24',
+                'updated_at' => '2026-03-03 15:34:24'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2909604,
+                'lideranca_solicitante_id' => 43,
+                'titulo' => 'Celebração de convênio para construção de um Centro',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:35:00',
+                'updated_at' => '2026-03-03 15:35:00'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2912509,
+                'lideranca_solicitante_id' => 67,
+                'titulo' => 'Viabilizar elaboração de projeto de Energia',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:36:26',
+                'updated_at' => '2026-03-03 15:42:08'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2914505,
+                'lideranca_solicitante_id' => 68,
+                'titulo' => 'Viabilidade para emissão de termo de uso do carro oficial',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:42:44',
+                'updated_at' => '2026-03-03 15:50:04'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2916708,
+                'lideranca_solicitante_id' => 38,
+                'titulo' => 'Cessão de uso de prédio público para a Creche Irmã Dulce',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:47:05',
+                'updated_at' => '2026-03-03 15:47:05'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2919801,
+                'lideranca_solicitante_id' => null,
+                'titulo' => 'Viabiliar elaboração de projeto para atender povoado',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:47:34',
+                'updated_at' => '2026-03-03 15:48:26'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2921807,
+                'lideranca_solicitante_id' => 37,
+                'titulo' => 'Doação de 30 mil alevinos para a comunidade',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:49:24',
+                'updated_at' => '2026-03-03 15:49:24'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2921807,
+                'lideranca_solicitante_id' => 37,
+                'titulo' => 'Doação de 30 mil alevinos para Secretaria Municipal',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:49:52',
+                'updated_at' => '2026-03-03 15:49:52'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Solicita implantação de torre de telefonia móvel',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:50:39',
+                'updated_at' => '2026-03-03 15:50:39'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Solicita visita técnica para a avaliação e o apoio',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:55:35',
+                'updated_at' => '2026-03-03 15:55:35'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Solicita cessão de 01 (um) veículo administrativo',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:56:00',
+                'updated_at' => '2026-03-03 15:56:00'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Solicita viabilizar a implantação de cursos técnicos',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:56:20',
+                'updated_at' => '2026-03-03 15:56:20'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Implantação de uma unidade CRAS quilombola',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:58:52',
+                'updated_at' => '2026-03-03 15:58:52'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Destinação de kits caixas agua para Ass. Quilombola',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:59:13',
+                'updated_at' => '2026-03-03 15:59:13'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Construção de um Colégio Estadual no Campo',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 15:59:43',
+                'updated_at' => '2026-03-03 15:59:43'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923407,
+                'lideranca_solicitante_id' => 51,
+                'titulo' => 'Implantação de uma unidade básica de saude',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:00:14',
+                'updated_at' => '2026-03-03 16:00:14'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923704,
+                'lideranca_solicitante_id' => 26,
+                'titulo' => 'Cessão de 01 (um) veículo administrativo de médio porte',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:01:02',
+                'updated_at' => '2026-03-03 16:01:02'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923704,
+                'lideranca_solicitante_id' => 26,
+                'titulo' => 'Pavimentação asfáltica da BA-160',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:01:40',
+                'updated_at' => '2026-03-03 16:01:40'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923704,
+                'lideranca_solicitante_id' => 26,
+                'titulo' => 'Intercessão junto a Coelba para viabilizar reforço',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:02:25',
+                'updated_at' => '2026-03-03 16:02:25'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2923704,
+                'lideranca_solicitante_id' => 26,
+                'titulo' => 'Aberura de 03 redas emergenciais para Polo',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:03:28',
+                'updated_at' => '2026-03-03 16:03:28'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2930006,
+                'lideranca_solicitante_id' => 33,
+                'titulo' => 'Mobiliários para a Escola Municipal',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:03:50',
+                'updated_at' => '2026-03-03 16:03:50'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2930006,
+                'lideranca_solicitante_id' => 33,
+                'titulo' => 'Conclusão da obra na Escola Tiradentes',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-03 16:04:16',
+                'updated_at' => '2026-03-03 16:04:16'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Pavimentação na Sede (19 mil metros quadros)',
+                'valor' => 5071000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 10:24:35',
+                'updated_at' => '2026-03-06 10:24:35'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cessão de Equipamentos Hospitalares',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusEmExecucao,
+                'created_at' => '2026-03-06 10:25:41',
+                'updated_at' => '2026-03-06 10:25:41'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cessão de 08 KITS UBS',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 10:26:34',
+                'updated_at' => '2026-03-06 10:36:08'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cessão de 08 KITS Odontológicos',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 10:36:53',
+                'updated_at' => '2026-03-06 10:36:53'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cessão de Ambulância 0km',
+                'valor' => 289000.00,
+                'ano' => 2026,
+                'status_id' => $statusEmExecucao,
+                'created_at' => '2026-03-06 10:39:01',
+                'updated_at' => '2026-03-06 10:39:01'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cessão de Van para Tratamento Fora do Domicílio',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusEmExecucao,
+                'created_at' => '2026-03-06 10:39:42',
+                'updated_at' => '2026-03-06 10:39:42'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Celebração de Convênio para Construção de UBS',
+                'valor' => 2206000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 10:40:40',
+                'updated_at' => '2026-03-06 10:40:40'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cessão de Ônibus Escolar',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 10:41:25',
+                'updated_at' => '2026-03-06 10:41:25'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Celebração de Convênio para aquisição de mobiliários',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:00:01',
+                'updated_at' => '2026-03-06 11:00:01'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Celebração de Convênio para Construção de Escola',
+                'valor' => 13767390.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:01:34',
+                'updated_at' => '2026-03-06 11:01:49'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Celebração de Convênio para Construção de Creche',
+                'valor' => 6258086.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:02:55',
+                'updated_at' => '2026-03-06 11:02:55'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Implantação de Gramado Sintético no Estádio',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:03:59',
+                'updated_at' => '2026-03-06 11:03:59'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Iluminação do Estádio Municipal',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:04:33',
+                'updated_at' => '2026-03-06 11:04:33'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Cobertura da Feira',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:05:08',
+                'updated_at' => '2026-03-06 11:05:08'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Construção de Unidade da Polícia Militar',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:12:52',
+                'updated_at' => '2026-03-06 11:12:52'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Implentação da SSAA (20km)',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:13:29',
+                'updated_at' => '2026-03-06 11:13:29'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Construção da Praça da Igreja',
+                'valor' => 850000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:14:10',
+                'updated_at' => '2026-03-06 11:14:10'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Construção da Praça de Varzea do Curral',
+                'valor' => 450000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:15:08',
+                'updated_at' => '2026-03-06 11:15:08'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Construção de Praça no Bairro do Estádio',
+                'valor' => 800000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:16:58',
+                'updated_at' => '2026-03-06 11:16:58'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Drenagem na Praça Luis Eduardo Magalhães',
+                'valor' => 710287.64,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:18:05',
+                'updated_at' => '2026-03-06 11:18:05'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Construção do Centro de Comercialização de Animais',
+                'valor' => 500000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:19:03',
+                'updated_at' => '2026-03-06 11:19:03'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2910859,
+                'lideranca_solicitante_id' => 66,
+                'titulo' => 'Pavimentação em CBUQ na Avenida ACM',
+                'valor' => 2000000.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-06 11:20:06',
+                'updated_at' => '2026-03-06 11:20:06'
+            ],
+            [
+                'user_id' => 3,
+                'id_municipio' => 2909000,
+                'lideranca_solicitante_id' => 41,
+                'titulo' => '2,5 km de pavimentação urbana em CBUQ',
+                'valor' => 0.00,
+                'ano' => 2026,
+                'status_id' => $statusSolicitado,
+                'created_at' => '2026-03-17 10:52:43',
+                'updated_at' => '2026-03-17 10:52:43'
+            ],
+        ];
+
+        // Insere as ações com placeholders
+        foreach ($acoesAntigas as $acao) {
+            // $acao['user_id'] = 1;
+            // $acao['lideranca_solicitante_id'] = null;
+            $acaoId = DB::table('acoes')->insertGetId([
+                'user_id' => $acao['user_id'],
+                'id_municipio' => $acao['id_municipio'],
+                'orgao_governo_id' => $orgaoPlaceholder,
+                'categoria_investimento_id' => $categoriaPlaceholder,
+                'tipo_acao_id' => $tipoPlaceholder,
+                'status_id' => $acao['status_id'],
+                'lideranca_solicitante_id' => $acao['lideranca_solicitante_id'],
+                'titulo' => $acao['titulo'],
+                'numero_sei' => 'MIGRADO',
+                'instrumento_path' => null,
+                'valor' => $acao['valor'],
+                'ano' => $acao['ano'],
+                'observacao' => null,
+                'created_at' => $acao['created_at'],
+                'updated_at' => $acao['updated_at']
+            ]);
+
+            // Cria histórico
+            DB::table('acoes_historico')->insert([
+                'acao_id' => $acaoId,
+                'status_id' => $acao['status_id'],
+                'user_id' => $acao['user_id'],
+                'observacao' => 'Ação migrada do sistema antigo - NECESSITA ATUALIZAÇÃO',
+                'created_at' => $acao['created_at']
+            ]);
+        }
+
+        $this->command->info('✅ 55 ações migradas com sucesso!');
+        $this->command->warn('⚠️  ATENÇÃO: Ações precisam ser atualizadas (órgão, categoria, tipo)');
+    }
+}

@@ -183,6 +183,12 @@ class ExcelImportService
                     continue;
                 }
 
+                if (empty($ano)) {
+                    $this->import->addError($row, 'Ano é obrigatório');
+                    $this->import->incrementProgress();
+                    continue;
+                }
+
                 // Busca IDs no cache
                 $orgaoId = $cache['orgaos'][$orgaoNome] ?? null;
                 $categoriaId = $cache['categorias'][$categoriaNome] ?? null;
@@ -362,15 +368,36 @@ class ExcelImportService
 
     private function parseAno($ano): ?int
     {
-        if (is_numeric($ano) && $ano >= self::MIN_ANO && $ano <= self::MAX_ANO) {
-            return (int) $ano;
+        // ⬇️ IMPORTANTE: Retorna null se vazio (validação depois vai pegar)
+        if ($ano === null || $ano === '') {
+            return null;
         }
 
-        if (Date::isDateTime($ano)) {
-            return (int) Date::excelToDateTimeObject($ano)->format('Y');
+        // Converte pra string pra facilitar
+        $anoStr = (string) $ano;
+
+        // 1️⃣ Tenta como número inteiro direto
+        if (is_numeric($ano)) {
+            $anoInt = (int) $ano;
+            
+            // Se tá na faixa válida de anos
+            if ($anoInt >= self::MIN_ANO && $anoInt <= self::MAX_ANO) {
+                return $anoInt;
+            }
+
+            // Se tá na faixa de datas seriais do Excel
+            if ($anoInt > 0 && $anoInt < 2958466) {
+                try {
+                    $dateObj = Date::excelToDateTimeObject($ano);
+                    return (int) $dateObj->format('Y');
+                } catch (\Exception $e) {
+                    // Falhou, tenta regex
+                }
+            }
         }
 
-        if (preg_match('/(\d{4})/', (string) $ano, $matches)) {
+        // 2️⃣ Tenta extrair 4 dígitos
+        if (preg_match('/(\d{4})/', $anoStr, $matches)) {
             $extractedYear = (int) $matches[1];
             
             if ($extractedYear >= self::MIN_ANO && $extractedYear <= self::MAX_ANO) {
@@ -378,6 +405,7 @@ class ExcelImportService
             }
         }
 
+        // 3️⃣ Não conseguiu → retorna null (validação depois vai pegar)
         return null;
     }
 }

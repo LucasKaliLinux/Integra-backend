@@ -27,7 +27,7 @@ class AcaoController extends Controller
                 'status:id,nome,slug'
             ])
             ->filter($request->all())
-            ->latest();
+            ->sort($request->input('sort_by'), $request->input('sort_order'));
 
         $perPage = min($request->input('per_page', 10), 20);
 
@@ -44,6 +44,7 @@ class AcaoController extends Controller
                 'valor' => (float) $acao->valor,
                 'ano' => $acao->ano,
                 'status' => $acao->status->nome ?? '-',
+                'observacao' => $acao->observacao,
                 'instrumento_path' => $acao->instrumento_path ? md5($acao->instrumento_path) : null,
             ];
         });
@@ -194,21 +195,26 @@ class AcaoController extends Controller
     public function uploadInstrumento(Request $request, string $id)
     {
         $request->validate([
-            'instrumento' => 'required|file|mimes:pdf,doc,docx|max:10240' // 10MB
+            'instrumento' => 'required|file|mimes:pdf,doc,docx|max:20480' // 10MB
+        ], [
+            'instrumento.required' => 'Você precisa enviar um arquivo.',
+            'instrumento.file' => 'O arquivo enviado é inválido.',
+            'instrumento.mimes' => 'O arquivo deve ser PDF, DOC ou DOCX.',
+            'instrumento.max' => 'O arquivo deve ter no máximo 20MB.',
         ]);
 
         $acao = $request->user()->acoes()->findOrFail($id);
-
-        // Deleta arquivo antigo se existir
-        if ($acao->instrumento_path) {
-            \Storage::disk('public')->delete($acao->instrumento_path);
-        }
 
         $filename = Str::uuid().'.'.$request->file('instrumento')->extension();
         
         // Salva novo arquivo
         $path = $request->file('instrumento')
             ->storeAs('instrumentos', $filename, 'public');
+
+        // Deleta arquivo antigo se existir
+        if ($acao->instrumento_path) {
+            \Storage::disk('public')->delete($acao->instrumento_path);
+        }
 
         $acao->update(['instrumento_path' => $path]);
 
