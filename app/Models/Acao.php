@@ -70,67 +70,75 @@ class Acao extends Model
         return $this->hasMany(AcaoHistorico::class, 'acao_id')->orderBy('created_at');
     }
     
-    // Scopes
+    /**
+    * Scope de filtros
+    */
     public function scopeFilter($query, array $filters)
     {
         // Município
         if (!empty($filters['municipio'])) {
-            $query->where('acoes.id_municipio', $filters['municipio']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.id_municipio', $filters['municipio']);
         }
 
-        // Status
+        // ⬇️ MUDANÇA: Status (aceita array ou valor único)
         if (!empty($filters['status'])) {
-            $query->where('acoes.status_id', $filters['status']); // ⬅️ PREFIXO acoes.
+            if (is_array($filters['status'])) {
+                // Múltiplos status: [1, 3, 5]
+                $query->whereIn('acoes.status_id', $filters['status']);
+            } else {
+                // Status único: 1
+                $query->where('acoes.status_id', $filters['status']);
+            }
         }
 
         // Ano específico
         if (!empty($filters['ano'])) {
-            $query->where('acoes.ano', $filters['ano']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.ano', $filters['ano']);
         }
 
         // Ano mínimo
         if (!empty($filters['ano_min'])) {
-            $query->where('acoes.ano', '>=', $filters['ano_min']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.ano', '>=', $filters['ano_min']);
         }
 
         // Ano máximo
         if (!empty($filters['ano_max'])) {
-            $query->where('acoes.ano', '<=', $filters['ano_max']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.ano', '<=', $filters['ano_max']);
         }
 
         // Valor mínimo
         if (!empty($filters['valor_min'])) {
-            $query->where('acoes.valor', '>=', $filters['valor_min']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.valor', '>=', $filters['valor_min']);
         }
 
         // Valor máximo
         if (!empty($filters['valor_max'])) {
-            $query->where('acoes.valor', '<=', $filters['valor_max']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.valor', '<=', $filters['valor_max']);
         }
 
         // Órgão
         if (!empty($filters['orgao'])) {
-            $query->where('acoes.orgao_governo_id', $filters['orgao']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.orgao_governo_id', $filters['orgao']);
         }
 
         // Categoria
         if (!empty($filters['categoria'])) {
-            $query->where('acoes.categoria_investimento_id', $filters['categoria']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.categoria_investimento_id', $filters['categoria']);
         }
 
         // Tipo de ação
         if (!empty($filters['tipo_acao'])) {
-            $query->where('acoes.tipo_acao_id', $filters['tipo_acao']); // ⬅️ PREFIXO acoes.
+            $query->where('acoes.tipo_acao_id', $filters['tipo_acao']);
         }
 
-        // Esfera (via relationship - precisa de JOIN)
+        // Esfera (via relationship)
         if (!empty($filters['esfera'])) {
             $query->whereHas('orgao.tipoOrgao', function($q) use ($filters) {
                 $q->where('esfera_governo_id', $filters['esfera']);
             });
         }
 
-        // Tipo de órgão (via relationship - precisa de JOIN)
+        // Tipo de órgão (via relationship)
         if (!empty($filters['tipo_orgao'])) {
             $query->whereHas('orgao', function($q) use ($filters) {
                 $q->where('tipo_orgao_id', $filters['tipo_orgao']);
@@ -141,8 +149,8 @@ class Acao extends Model
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function($q) use ($search) {
-                $q->where('acoes.titulo', 'like', "%{$search}%") // ⬅️ PREFIXO acoes.
-                ->orWhere('acoes.numero_sei', 'like', "%{$search}%"); // ⬅️ PREFIXO acoes.
+                $q->where('acoes.titulo', 'like', "%{$search}%")
+                ->orWhere('acoes.numero_sei', 'like', "%{$search}%");
             });
         }
 

@@ -8,6 +8,8 @@ use App\Http\Requests\StoreAcaoRequest;
 use App\Models\Acao;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AcaoController extends Controller
@@ -21,7 +23,7 @@ class AcaoController extends Controller
             ->acoes()
             ->with([
                 'municipio:id_municipio,nome',
-                'orgao.tipoOrgao.esferaGoverno', // ⬅️ Pega governo (federal/estadual)
+                'orgao.tipoOrgao.esferaGoverno', 
                 'orgao:id,tipo_orgao_id,nome,sigla',
                 'categoriaInvestimento:id,nome',
                 'status:id,nome,slug'
@@ -94,10 +96,43 @@ class AcaoController extends Controller
                 'tipoAcao:id,nome',
                 'status:id,nome,slug',
                 'liderancaSolicitante:id,nome',
-                // 'historico.status:id,nome',
-                // 'historico.user:id,name'
             ])
             ->findOrFail($id);
+
+        // ⬇️ NOVO: Processa informações do instrumento
+        $instrumentoInfo = null;
+        if ($acao->instrumento_path && Storage::disk('public')->exists($acao->instrumento_path)) {
+            $fullPath = Storage::disk('public')->path($acao->instrumento_path);
+            $extension = strtoupper(pathinfo($acao->instrumento_path, PATHINFO_EXTENSION));
+            $sizeInBytes = filesize($fullPath);
+            
+            // Formata tamanho em MB/KB
+            if ($sizeInBytes >= 1048576) { // >= 1MB
+                $sizeFormatted = round($sizeInBytes / 1048576, 2) . ' MB';
+            } else {
+                $sizeFormatted = round($sizeInBytes / 1024, 2) . ' KB';
+            }
+
+            $instrumentoInfo = [
+                'exists' => true,
+                'filename' => basename($acao->instrumento_path),
+                'extension' => $extension,
+                'size_bytes' => $sizeInBytes,
+                'size_formatted' => $sizeFormatted,
+                'mime_type' => Storage::disk('public')->mimeType($acao->instrumento_path),
+                'uploaded_at' => $acao->updated_at->format('d/m/Y H:i'), // Aproximação
+            ];
+        } else {
+            $instrumentoInfo = [
+                'exists' => false,
+                'filename' => null,
+                'extension' => null,
+                'size_bytes' => null,
+                'size_formatted' => null,
+                'mime_type' => null,
+                'uploaded_at' => null,
+            ];
+        }
 
         return response()->json([
             'id' => $acao->id,
@@ -132,15 +167,7 @@ class AcaoController extends Controller
                 'nome' => $acao->status->nome
             ],
             'observacao' => $acao->observacao,
-            'instrumento_path' => $acao->instrumento_path ? md5($acao->instrumento_path) : null,
-            // 'historico' => $acao->historico->map(fn($h) => [
-            //     'status' => $h->status->nome,
-            //     'usuario' => $h->user->name,
-            //     'observacao' => $h->observacao,
-            //     'data' => $h->created_at->format('d/m/Y H:i')
-            // ]),
-            // 'created_at' => $acao->created_at->format('d/m/Y H:i'),
-            // 'updated_at' => $acao->updated_at->format('d/m/Y H:i')
+            'instrumento' => $instrumentoInfo, // ⬅️ NOVO: Objeto completo
         ]);
     }
 
@@ -194,35 +221,104 @@ class AcaoController extends Controller
      */
     public function uploadInstrumento(Request $request, string $id)
     {
+        // ⬇️ Validação completa e segura
         $request->validate([
-            'instrumento' => 'required|file|mimes:pdf,doc,docx|max:20480' // 10MB
+            'instrumento' => [
+                'required',
+                'file',
+                'mimes:pdf,doc,docx,jpg,jpeg,png', // Tipos permitidos
+                'max:20480', // 20MB
+                function ($attribute, $value, $fail) {
+                    // ⬇️ SEGURANÇA: Valida MIME type real (não só extensão)
+                    $allowedMimes = [
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'image/jpeg',
+                        'image/png',
+                    ];
+
+                    if (!in_array($value->getMimeType(), $allowedMimes)) {
+                        $fail('O tipo de arquivo não é permitido.');
+                    }
+
+                    // ⬇️ SEGURANÇA: Valida conteúdo do arquivo (anti-spoofing)
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $realMime = finfo_file($finfo, $value->getRealPath());
+                    finfo_close($finfo);
+
+                    if (!in_array($realMime, $allowedMimes)) {
+                        $fail('O arquivo possui conteúdo inválido.');
+                    }
+                }
+            ]
         ], [
             'instrumento.required' => 'Você precisa enviar um arquivo.',
             'instrumento.file' => 'O arquivo enviado é inválido.',
-            'instrumento.mimes' => 'O arquivo deve ser PDF, DOC ou DOCX.',
+            'instrumento.mimes' => 'O arquivo deve ser PDF, DOC, DOCX, JPG ou PNG.',
             'instrumento.max' => 'O arquivo deve ter no máximo 20MB.',
         ]);
 
-        $acao = $request->user()->acoes()->findOrFail($id);
+        // ⬇️ RACE CONDITION: Usa lock otimista
+        $acao = $request->user()->acoes()->lockForUpdate()->findOrFail($id);
 
-        $filename = Str::uuid().'.'.$request->file('instrumento')->extension();
+        // ⬇️ SEGURANÇA: Nome de arquivo único e sanitizado
+        $extension = $request->file('instrumento')->extension();
+        $safeFilename = Str::uuid() . '_' . time() . '.' . $extension;
         
-        // Salva novo arquivo
-        $path = $request->file('instrumento')
-            ->storeAs('instrumentos', $filename, 'public');
+        // ⬇️ Usa transaction para garantir atomicidade
+        DB::beginTransaction();
+        try {
+            // Salva novo arquivo
+            $path = $request->file('instrumento')
+                ->storeAs('instrumentos', $safeFilename, 'public');
 
-        // Deleta arquivo antigo se existir
-        if ($acao->instrumento_path) {
-            \Storage::disk('public')->delete($acao->instrumento_path);
+            // Deleta arquivo antigo se existir
+            if ($acao->instrumento_path && Storage::disk('public')->exists($acao->instrumento_path)) {
+                Storage::disk('public')->delete($acao->instrumento_path);
+            }
+
+            // Atualiza banco
+            $acao->update(['instrumento_path' => $path]);
+
+            DB::commit();
+
+            // ⬇️ Retorna informações completas do arquivo
+            $fullPath = Storage::disk('public')->path($path);
+            $sizeInBytes = filesize($fullPath);
+            
+            if ($sizeInBytes >= 1048576) {
+                $sizeFormatted = round($sizeInBytes / 1048576, 2) . ' MB';
+            } else {
+                $sizeFormatted = round($sizeInBytes / 1024, 2) . ' KB';
+            }
+
+            return response()->json([
+                'message' => 'Instrumento enviado com sucesso.',
+                'instrumento' => [
+                    'exists' => true,
+                    'filename' => $safeFilename,
+                    'extension' => strtoupper($extension),
+                    'size_bytes' => $sizeInBytes,
+                    'size_formatted' => $sizeFormatted,
+                    'mime_type' => Storage::disk('public')->mimeType($path),
+                    'uploaded_at' => now()->format('d/m/Y H:i'),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // Remove arquivo se deu erro no banco
+            if (isset($path) && Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+
+            return response()->json([
+                'message' => 'Erro ao enviar instrumento.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $acao->update(['instrumento_path' => $path]);
-
-        return response()->json([
-            'message' => 'Instrumento enviado com sucesso.',
-            'path' => $path,
-            'url' => \Storage::url($path)
-        ]);
     }
 
     /**
@@ -230,14 +326,34 @@ class AcaoController extends Controller
      */
     public function deleteInstrumento(Request $request, string $id)
     {
-        $acao = $request->user()->acoes()->findOrFail($id);
+        // ⬇️ RACE CONDITION: Lock otimista
+        $acao = $request->user()->acoes()->lockForUpdate()->findOrFail($id);
 
-        if ($acao->instrumento_path) {
-            \Storage::disk('public')->delete($acao->instrumento_path);
-            $acao->update(['instrumento_path' => null]);
+        if (!$acao->instrumento_path) {
+            return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
         }
 
-        return response()->json(['message' => 'Instrumento removido com sucesso.']);
+        DB::beginTransaction();
+        try {
+            // Deleta arquivo físico
+            if (Storage::disk('public')->exists($acao->instrumento_path)) {
+                Storage::disk('public')->delete($acao->instrumento_path);
+            }
+
+            // Atualiza banco
+            $acao->update(['instrumento_path' => null]);
+
+            DB::commit();
+
+            return response()->json(['message' => 'Instrumento removido com sucesso.']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Erro ao remover instrumento.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function downloadInstrumento(Request $request, string $id)
@@ -248,18 +364,32 @@ class AcaoController extends Controller
             return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
         }
 
-        if (!\Storage::disk('public')->exists($acao->instrumento_path)) {
+        // ⬇️ SEGURANÇA: Valida que arquivo ainda existe
+        if (!Storage::disk('public')->exists($acao->instrumento_path)) {
+            // Limpa referência órfã do banco
+            $acao->update(['instrumento_path' => null]);
             return response()->json(['message' => 'Arquivo não encontrado.'], 404);
         }
 
-        $fullPath  = \Storage::disk('public')->path($acao->instrumento_path);
-        $extension = pathinfo($acao->instrumento_path, PATHINFO_EXTENSION); // pdf, doc, docx
-        $filename  = 'instrumento-' . $acao->id . '.' . $extension;
+        // ⬇️ SEGURANÇA: Valida que caminho não foi manipulado (path traversal)
+        $fullPath = Storage::disk('public')->path($acao->instrumento_path);
+        $basePath = Storage::disk('public')->path('instrumentos');
+        
+        if (strpos(realpath($fullPath), realpath($basePath)) !== 0) {
+            abort(403, 'Acesso negado.');
+        }
 
-        $mime = \Storage::disk('public')->mimeType($acao->instrumento_path);
+        // ⬇️ Nome de arquivo seguro para download
+        $extension = pathinfo($acao->instrumento_path, PATHINFO_EXTENSION);
+        $safeFilename = 'instrumento_acao_' . $acao->id . '_' . date('Ymd') . '.' . $extension;
 
-        return response()->download($fullPath, $filename, [
+        // ⬇️ MIME type correto
+        $mime = Storage::disk('public')->mimeType($acao->instrumento_path);
+
+        return response()->download($fullPath, $safeFilename, [
             'Content-Type' => $mime,
+            'Content-Disposition' => 'attachment; filename="' . $safeFilename . '"',
+            'X-Content-Type-Options' => 'nosniff', // Previne MIME sniffing
         ]);
     }
 }
