@@ -16,11 +16,17 @@ use App\Http\Controllers\ImportAcaoController;
 use App\Http\Controllers\LiderancaController;
 use App\Http\Controllers\MunicipioController;
 use App\Http\Controllers\OrgaoGovernoController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatusAcaoController;
 use App\Http\Controllers\TipoAcaoController;
 use App\Http\Controllers\TipoOrgaoController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+
+/**============================================================*/
+/**====== IMPLEMENTE AS ROTAS DE PROFILE E DO MANAGER =========*/
+/**============================================================*/
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -31,11 +37,22 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login']);
 // Route::get("/senha", [AuthController::class, 'senha']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum', 'active')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/dashboard', [AuthController::class, 'dashboard']);
     Route::get('/me/metadata', [AuthController::class, 'metadata']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::put('/profile', [ProfileController::class, 'updateProfile']);
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserManagementController::class, 'index']);
+        Route::post('/', [UserManagementController::class, 'store']);
+        Route::put('/{id}', [UserManagementController::class, 'update']);
+        Route::patch('/{id}/toggle-status', [UserManagementController::class, 'toggleStatus']);
+        Route::delete('/{id}', [UserManagementController::class, 'destroy']);
+    });
 
     Route::get('/municipios', [MunicipioController::class, 'index']);
 

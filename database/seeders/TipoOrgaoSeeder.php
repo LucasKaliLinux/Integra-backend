@@ -30,6 +30,7 @@ class TipoOrgaoSeeder extends Seeder
             ['esfera_governo_id' => $estadual->id, 'nome' => 'Instituto', 'slug' => 'instituto'],
             ['esfera_governo_id' => $estadual->id, 'nome' => 'Empresa Estadual', 'slug' => 'empresa_estadual'],
             ['esfera_governo_id' => $estadual->id, 'nome' => 'Superintendência', 'slug' => 'superintendencia'],
+            ['esfera_governo_id' => $estadual->id, 'nome' => 'Segurança Pública', 'slug' => 'seguranca_publica'],
         ];
 
         foreach ($tipos as $tipo) {

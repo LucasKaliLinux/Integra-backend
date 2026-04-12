@@ -9,6 +9,7 @@ use App\Http\Requests\StoreLiderancaPoliticaRequest;
 use App\Http\Resources\EstrategiaLiderancaResource;
 use App\Models\CargoLideranca;
 use App\Models\ClassificacaoLideranca;
+use App\Models\Lideranca;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\Validator;
 
 class EstrategiaLiderancaController extends Controller
 {
-    // ⬇️ ANO FIXO (fácil de mudar no futuro)
     private const ANO_ELEICAO = 2024;
 
     public function index(Request $request, $id)
@@ -28,14 +28,13 @@ class EstrategiaLiderancaController extends Controller
         
         $dados = Cache::remember($cacheKey, 3600, function() use ($id, $perPage, $page) {
             
-            // 1️⃣ Busca TODOS os prefeitos
             $prefeitos = DB::table('votacao as v')
                 ->join('candidaturas as c', 'v.titulo_eleitoral_candidato', '=', 'c.titulo_eleitoral')
                 ->where('v.id_municipio', $id)
-                ->where('v.ano', 2024) // ⬅️ USA CONSTANTE
+                ->where('v.ano', self::ANO_ELEICAO)
                 ->where('v.cargo', 'prefeito')
                 ->select([
-                    DB::raw('MAX(v.sequencial_candidato) as sequencial_candidato'), // ⬅️ MUDOU!
+                    DB::raw('MAX(v.sequencial_candidato) as sequencial_candidato'),
                     'v.cargo',
                     'v.sigla_partido',
                     DB::raw('MAX(v.votos) as votos'),
@@ -48,14 +47,13 @@ class EstrategiaLiderancaController extends Controller
                 ->orderByDesc('votos')
                 ->get();
 
-            // 2️⃣ Busca vereadores PAGINADOS
             $vereadores = DB::table('votacao as v')
                 ->join('candidaturas as c', 'v.titulo_eleitoral_candidato', '=', 'c.titulo_eleitoral')
                 ->where('v.id_municipio', $id)
-                ->where('v.ano', 2024) // ⬅️ USA CONSTANTE
+                ->where('v.ano', self::ANO_ELEICAO)
                 ->where('v.cargo', 'vereador')
                 ->select([
-                    DB::raw('MAX(v.sequencial_candidato) as sequencial_candidato'), // ⬅️ MUDOU!
+                    DB::raw('MAX(v.sequencial_candidato) as sequencial_candidato'),
                     'v.cargo',
                     'v.sigla_partido',
                     DB::raw('MAX(v.votos) as votos'),
@@ -92,12 +90,11 @@ class EstrategiaLiderancaController extends Controller
     {
         $user = $request->user();
 
-        // Busca só os sequenciais (ano já é fixo)
         $selecionados = DB::table('liderancas_politicas as lp')
             ->join('liderancas as l', 'lp.lideranca_id', '=', 'l.id')
-            ->where('l.user_id', $user->id)
+            ->where('l.deputado_id', $user->deputado_id)
             ->where('l.id_municipio', $idMunicipio)
-            ->where('lp.ano', 2024) // ⬅️ Filtra pelo ano fixo
+            ->where('lp.ano', self::ANO_ELEICAO)
             ->pluck('lp.sequencial_candidato')
             ->toArray();
 
@@ -106,6 +103,8 @@ class EstrategiaLiderancaController extends Controller
 
     public function store(StoreLiderancaPoliticaRequest $request)
     {
+        $this->authorize('create', Lideranca::class);
+
         $user = $request->user();
         $idMunicipio = $request->id_municipio;
         $aliados = $request->aliados ?? [];
@@ -122,10 +121,9 @@ class EstrategiaLiderancaController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1️⃣ Valida se todos os sequenciais existem
             $idsValidos = DB::table('votacao')
                 ->where('id_municipio', $idMunicipio)
-                ->where('ano', 2024) // ⬅️ USA CONSTANTE
+                ->where('ano', self::ANO_ELEICAO)
                 ->whereIn('cargo', ['prefeito', 'vereador'])
                 ->whereIn('sequencial_candidato', $todosSelecionados)
                 ->pluck('sequencial_candidato')
@@ -139,11 +137,10 @@ class EstrategiaLiderancaController extends Controller
                 ], 422);
             }
 
-            // 2️⃣ Busca SOMENTE os candidatos selecionados
             $candidatos = DB::table('votacao as v')
                 ->join('candidaturas as c', 'v.titulo_eleitoral_candidato', '=', 'c.titulo_eleitoral')
                 ->where('v.id_municipio', $idMunicipio)
-                ->where('v.ano', 2024) // ⬅️ USA CONSTANTE
+                ->where('v.ano', self::ANO_ELEICAO)
                 ->whereIn('v.cargo', ['prefeito', 'vereador'])
                 ->whereIn('v.sequencial_candidato', $todosSelecionados)
                 ->select([
@@ -158,12 +155,11 @@ class EstrategiaLiderancaController extends Controller
                 ->groupBy('v.titulo_eleitoral_candidato', 'v.cargo')
                 ->get();
 
-            // 3️⃣ Verifica se algum candidato JÁ está cadastrado
             $sequenciais = $candidatos->pluck('sequencial_candidato')->toArray();
             
             $jaExiste = DB::table('liderancas_politicas')
                 ->whereIn('sequencial_candidato', $sequenciais)
-                ->where('ano', 2024) // ⬅️ USA CONSTANTE
+                ->where('ano', self::ANO_ELEICAO)
                 ->exists();
 
             if ($jaExiste) {
@@ -173,7 +169,6 @@ class EstrategiaLiderancaController extends Controller
                 ], 422);
             }
 
-            // 4️⃣ Busca classificacao_id e funcao_id (com cache)
             $classificacaoPolitica = Cache::remember('classificacao_politica', 3600, function () {
                 return ClassificacaoLideranca::where('slug', 'politica')->first();
             });
@@ -195,7 +190,6 @@ class EstrategiaLiderancaController extends Controller
                 return response()->json(['error' => 'Cargos "prefeito" ou "vereador" não encontrados.'], 500);
             }
 
-            // 5️⃣ Prepara dados para inserção
             $liderancasParaInserir = [];
 
             foreach ($candidatos as $candidato) {
@@ -207,6 +201,7 @@ class EstrategiaLiderancaController extends Controller
                 $resultadoMapeado = str_starts_with($candidato->resultado, 'eleito') ? 'eleito' : 'nao_eleito';
 
                 $liderancasParaInserir[] = [
+                    'deputado_id' => $user->deputado_id,
                     'user_id' => $user->id,
                     'id_municipio' => $idMunicipio,
                     'classificacao_id' => $classificacaoPolitica->id,
@@ -224,7 +219,6 @@ class EstrategiaLiderancaController extends Controller
                 ];
             }
 
-            // 6️⃣ Insere lideranças
             foreach ($liderancasParaInserir as $lideranca) {
                 $sequencialCandidato = $lideranca['_sequencial_candidato'];
                 $tituloEleitoral = $lideranca['_titulo_eleitoral'];
@@ -241,7 +235,7 @@ class EstrategiaLiderancaController extends Controller
                 DB::table('liderancas_politicas')->insert([
                     'lideranca_id' => $liderancaId,
                     'sequencial_candidato' => $sequencialCandidato,
-                    'ano' => 2024, // ⬅️ USA CONSTANTE
+                    'ano' => self::ANO_ELEICAO,
                     'titulo_eleitoral' => $tituloEleitoral,
                     'resultado' => $resultado,
                     'created_at' => now(),

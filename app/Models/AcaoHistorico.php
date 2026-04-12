@@ -14,7 +14,7 @@ class AcaoHistorico extends Model
     protected $fillable = [
         'acao_id',
         'status_id',
-        'user_id',
+        'user_id',          // ⚠️ NOTA: Representa 'quem fez a alteração', considere renomear para 'updated_by_user_id'
         'observacao'
     ];
 

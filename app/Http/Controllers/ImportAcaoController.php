@@ -15,6 +15,8 @@ class ImportAcaoController extends Controller
      */
     public function store(ImportAcaoRequest $request)
     {
+        $this->authorize('create', Import::class);
+
         $user = $request->user();
 
         // Salva arquivo temporariamente
@@ -32,6 +34,7 @@ class ImportAcaoController extends Controller
 
         // Cria registro de importação
         $import = Import::create([
+            'deputado_id' => $user->deputado_id,
             'user_id' => $user->id,
             'filename' => $filename,
             'original_filename' => $originalName,
@@ -52,8 +55,9 @@ class ImportAcaoController extends Controller
      */
     public function show(Request $request, int $id)
     {
-        $import = Import::where('user_id', $request->user()->id)
+        $import = Import::where('deputado_id', $request->user()->deputado_id)
             ->findOrFail($id);
+        $this->authorize('view', $import);
 
         return response()->json([
             'id' => $import->id,
@@ -77,7 +81,7 @@ class ImportAcaoController extends Controller
      */
     public function index(Request $request)
     {
-        $imports = Import::where('user_id', $request->user()->id)
+        $imports = Import::where('deputado_id', $request->user()->deputado_id)
             ->orderBy('created_at', 'DESC')
             ->paginate(10);
 

@@ -15,6 +15,8 @@ class ExportAcaoController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Export::class);
+
         $user = $request->user();
         $filtros = $request->all();
 
@@ -30,7 +32,7 @@ class ExportAcaoController extends Controller
         }
 
         // ⬇️ VALIDAÇÃO: Conta quantas ações seriam exportadas
-        $query = $user->acoes()->filter($filtros);
+        $query = Acao::where('deputado_id', $user->deputado_id)->filter($filtros);
         
         $totalAcoes = $query->count();
 
@@ -48,6 +50,7 @@ class ExportAcaoController extends Controller
 
         // Cria registro de exportação
         $export = Export::create([
+            'deputado_id' => $user->deputado_id,
             'user_id' => $user->id,
             'tipo' => 'pdf',
             'filename' => 'acoes_' . time() . '.pdf',
@@ -71,8 +74,9 @@ class ExportAcaoController extends Controller
      */
     public function show(Request $request, int $id)
     {
-        $export = Export::where('user_id', $request->user()->id)
+        $export = Export::where('deputado_id', $request->user()->deputado_id)
             ->findOrFail($id);
+        $this->authorize('view', $export);
 
         return response()->json([
             'id' => $export->id,
@@ -90,9 +94,10 @@ class ExportAcaoController extends Controller
      */
     public function download(Request $request, int $id)
     {
-        $export = Export::where('user_id', $request->user()->id)
+        $export = Export::where('deputado_id', $request->user()->deputado_id)
             ->where('status', 'completed')
             ->findOrFail($id);
+        $this->authorize('view', $export);
 
         $filePath = $export->getDownloadPath();
 
@@ -102,7 +107,7 @@ class ExportAcaoController extends Controller
 
         return response()->download($filePath, $export->filename, [
             'Content-Type' => 'application/pdf'
-        ])->deleteFileAfterSend(true); // Mantém o arquivo (opcional)
+        ])->deleteFileAfterSend(true);
     }
 
     /**
@@ -110,7 +115,7 @@ class ExportAcaoController extends Controller
      */
     public function index(Request $request)
     {
-        $exports = Export::where('user_id', $request->user()->id)
+        $exports = Export::where('deputado_id', $request->user()->deputado_id)
             ->orderBy('created_at', 'DESC')
             ->paginate(10);
 

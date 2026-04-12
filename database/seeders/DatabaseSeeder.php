@@ -30,12 +30,12 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            // EsferaGovernoSeeder::class,
-            // TipoOrgaoSeeder::class,
-            // OrgaoGovernoSeeder::class,
+            EsferaGovernoSeeder::class,
+            TipoOrgaoSeeder::class,
+            OrgaoGovernoSeeder::class,
             CategoriaInvestimentoSeeder::class,
-            // TipoAcaoSeeder::class,
-            // StatusAcaoSeeder::class,
+            TipoAcaoSeeder::class,
+            StatusAcaoSeeder::class,
         ]);
     }
 }

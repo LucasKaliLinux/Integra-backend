@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Export extends Model
 {
     protected $fillable = [
+        'deputado_id',
         'user_id',
         'tipo',
         'filename',
@@ -23,6 +24,11 @@ class Export extends Model
         'started_at' => 'datetime',
         'completed_at' => 'datetime'
     ];
+
+    public function deputado()
+    {
+        return $this->belongsTo(Deputado::class);
+    }
 
     public function user()
     {

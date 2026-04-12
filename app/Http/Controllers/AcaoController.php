@@ -3,31 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CacheHelper;
+use App\Helpers\InstrumentoHelper;
+use App\Http\Resources\AcaoResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAcaoRequest;
+use App\Http\Requests\UpdateAcaoRequest;
 use App\Models\Acao;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AcaoController extends Controller
 {
-    /**
-     * Lista todas as ações do usuário
-     */
     public function index(Request $request)
     {
-        $query = $request->user()
-            ->acoes()
-            ->with([
-                'municipio:id_municipio,nome',
-                'orgao.tipoOrgao.esferaGoverno', 
-                'orgao:id,tipo_orgao_id,nome,sigla',
-                'categoriaInvestimento:id,nome',
-                'status:id,nome,slug'
+        $query = $this->baseAcaoQuery($request)
+            ->select([
+                'id',
+                'titulo',
+                'id_municipio',
+                'orgao_governo_id',
+                'categoria_investimento_id',
+                'status_id',
+                'valor',
+                'ano',
+                'observacao',
+                'instrumento_path'
             ])
+            ->with($this->listRelations())
             ->filter($request->all())
             ->sort($request->input('sort_by'), $request->input('sort_order'));
 
@@ -35,180 +39,80 @@ class AcaoController extends Controller
 
         $paginated = $query->paginate($perPage)->withQueryString();
 
-        $paginated->getCollection()->transform(function ($acao) {
-            return [
-                'id' => $acao->id,
-                'governo' => $acao->orgao->tipoOrgao->esferaGoverno->nome ?? '-', // ⬅️ Federal/Estadual
-                'titulo' => $acao->titulo,
-                'orgao' => $acao->orgao->sigla ?? $acao->orgao->nome ?? '-',
-                'categoria' => $acao->categoriaInvestimento->nome ?? '-',
-                'municipio' => $acao->municipio->nome ?? '-',
-                'valor' => (float) $acao->valor,
-                'ano' => $acao->ano,
-                'status' => $acao->status->nome ?? '-',
-                'observacao' => $acao->observacao,
-                'instrumento_path' => $acao->instrumento_path ? md5($acao->instrumento_path) : null,
-            ];
-        });
+        $paginated->getCollection()->transform(fn (Acao $acao) => $this->transformListItem($acao));
 
         return response()->json($paginated);
     }
 
-    /**
-     * Cria uma nova ação
-     */
     public function store(StoreAcaoRequest $request)
     {
-        $validated = $request->validated();
-        
-        // Remove observacao_mudanca (não vai pro banco)
-        unset($validated['observacao_mudanca']);
+        $this->authorize('create', Acao::class);
 
-        $acao = $request->user()->acoes()->create($validated);
+        $data = $request->validated();
+        unset($data['observacao_mudanca']);
 
-        CacheHelper::invalidarMunicipio($acao->id_municipio, $request->user()->id);
+        $acao = DB::transaction(function () use ($request, $data) {
+            $acao = Acao::create([
+                ...$data,
+                'deputado_id' => $request->user()->deputado_id,
+                'user_id' => $request->user()->id,
+            ]);
 
-        // Retorna com relationships
-        $acao->load([
-            'municipio:id_municipio,nome',
-            'orgao:id,nome,sigla',
-            'categoriaInvestimento:id,nome',
-            'tipoAcao:id,nome',
-            'status:id,nome',
-            'liderancaSolicitante:id,nome'
-        ]);
-
-        return response()->json($acao, 201);
-    }
-
-    /**
-     * Exibe detalhes de uma ação específica
-     */
-    public function show(Request $request, string $id)
-    {
-        $acao = $request->user()
-            ->acoes()
-            ->with([
-                'municipio:id_municipio,nome',
-                'orgao.tipoOrgao.esferaGoverno',
-                'orgao:id,tipo_orgao_id,nome,sigla',
-                'categoriaInvestimento:id,nome',
-                'tipoAcao:id,nome',
-                'status:id,nome,slug',
-                'liderancaSolicitante:id,nome',
-            ])
-            ->findOrFail($id);
-
-        // ⬇️ NOVO: Processa informações do instrumento
-        $instrumentoInfo = null;
-        if ($acao->instrumento_path && Storage::disk('public')->exists($acao->instrumento_path)) {
-            $fullPath = Storage::disk('public')->path($acao->instrumento_path);
-            $extension = strtoupper(pathinfo($acao->instrumento_path, PATHINFO_EXTENSION));
-            $sizeInBytes = filesize($fullPath);
-            
-            // Formata tamanho em MB/KB
-            if ($sizeInBytes >= 1048576) { // >= 1MB
-                $sizeFormatted = round($sizeInBytes / 1048576, 2) . ' MB';
-            } else {
-                $sizeFormatted = round($sizeInBytes / 1024, 2) . ' KB';
+            // Sync lideranças
+            if ($request->has('liderancas')) {
+                $acao->liderancas()->sync($request->liderancas);
             }
 
-            $instrumentoInfo = [
-                'exists' => true,
-                'filename' => basename($acao->instrumento_path),
-                'extension' => $extension,
-                'size_bytes' => $sizeInBytes,
-                'size_formatted' => $sizeFormatted,
-                'mime_type' => Storage::disk('public')->mimeType($acao->instrumento_path),
-                'uploaded_at' => $acao->updated_at->format('d/m/Y H:i'), // Aproximação
-            ];
-        } else {
-            $instrumentoInfo = [
-                'exists' => false,
-                'filename' => null,
-                'extension' => null,
-                'size_bytes' => null,
-                'size_formatted' => null,
-                'mime_type' => null,
-                'uploaded_at' => null,
-            ];
-        }
+            CacheHelper::invalidarMunicipio($acao->id_municipio, $request->user()->id);
 
-        return response()->json([
-            'id' => $acao->id,
-            'governo' => $acao->orgao->tipoOrgao->esferaGoverno->nome ?? '-',
-            'titulo' => $acao->titulo,
-            'numero_sei' => $acao->numero_sei,
-            'orgao' => [
-                'id' => $acao->orgao->id,
-                'nome' => $acao->orgao->nome,
-                'sigla' => $acao->orgao->sigla
-            ],
-            'categoria' => [
-                'id' => $acao->categoriaInvestimento->id,
-                'nome' => $acao->categoriaInvestimento->nome
-            ],
-            'tipo' => [
-                'id' => $acao->tipoAcao->id,
-                'nome' => $acao->tipoAcao->nome
-            ],
-            'municipio' => [
-                'id' => $acao->municipio->id_municipio,
-                'nome' => $acao->municipio->nome
-            ],
-            'lideranca_solicitante' => $acao->liderancaSolicitante ? [
-                'id' => $acao->liderancaSolicitante->id,
-                'nome' => $acao->liderancaSolicitante->nome
-            ] : null,
-            'valor' => (float) $acao->valor,
-            'ano' => $acao->ano,
-            'status' => [
-                'id' => $acao->status->id,
-                'nome' => $acao->status->nome
-            ],
-            'observacao' => $acao->observacao,
-            'instrumento' => $instrumentoInfo, // ⬅️ NOVO: Objeto completo
-        ]);
+            return $acao;
+        });
+
+        // Recarregar após transação
+        $acao->load($this->detailRelations());
+
+        return new AcaoResource($acao);
     }
 
-    /**
-     * Atualiza uma ação
-     */
-    public function update(StoreAcaoRequest $request, string $id)
+    public function show(Request $request, string $id)
     {
-        $acao = $request->user()->acoes()->findOrFail($id);
+        $acao = $this->fetchAcao($request, $id, $this->detailRelations());
+        $this->authorize('view', $acao);
 
-        $validated = $request->validated();
-        
-        // Remove observacao_mudanca (não vai pro banco)
-        unset($validated['observacao_mudanca']);
-
-        $acao->update($validated);
-
-        CacheHelper::invalidarMunicipio($acao->id_municipio, $request->user()->id);
-
-        // Retorna com relationships
-        $acao->load([
-            'municipio:id_municipio,nome',
-            'orgao:id,nome,sigla',
-            'categoriaInvestimento:id,nome',
-            'tipoAcao:id,nome',
-            'status:id,nome',
-            'liderancaSolicitante:id,nome'
-        ]);
-
-        return response()->json($acao);
+        return new AcaoResource($acao);
     }
 
-    /**
-     * Remove uma ação
-     */
+    public function update(UpdateAcaoRequest $request, string $id)
+    {
+        $acao = $this->fetchAcao($request, $id);
+        $this->authorize('update', $acao);
+
+        $data = $request->validated();
+        unset($data['observacao_mudanca']);
+
+        DB::transaction(function () use ($acao, $data, $request) {
+            $acao->update($data);
+
+            // Sync lideranças
+            if ($request->has('liderancas')) {
+                $acao->liderancas()->sync($request->liderancas);
+            }
+
+            CacheHelper::invalidarMunicipio($acao->id_municipio, $request->user()->id);
+        });
+
+        // Recarregar após transação
+        $acao->load($this->detailRelations());
+
+        return new AcaoResource($acao);
+    }
+
     public function destroy(Request $request, string $id)
     {
-        $acao = $request->user()->acoes()->findOrFail($id);
+        $acao = $this->fetchAcao($request, $id);
+        $this->authorize('delete', $acao);
 
         $idMunicipio = $acao->id_municipio;
-
         $acao->delete();
 
         CacheHelper::invalidarMunicipio($idMunicipio, $request->user()->id);
@@ -216,20 +120,166 @@ class AcaoController extends Controller
         return response()->json(['message' => 'Ação removida com sucesso.']);
     }
 
-    /**
-     * Upload de instrumento
-     */
     public function uploadInstrumento(Request $request, string $id)
     {
-        // ⬇️ Validação completa e segura
+        $this->validateInstrumento($request);
+
+        $acao = $this->baseAcaoQuery($request)
+            ->lockForUpdate()
+            ->findOrFail($id);
+        $this->authorize('update', $acao);
+
+        $extension = $request->file('instrumento')->extension();
+        $safeFilename = Str::uuid() . '_' . time() . '.' . $extension;
+
+        DB::beginTransaction();
+
+        try {
+            $path = $this->storeInstrumentoFile($request->file('instrumento'), $safeFilename);
+            $this->removeInstrumentoFile($acao->instrumento_path);
+
+            $acao->update(['instrumento_path' => $path]);
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Instrumento enviado com sucesso.',
+                'instrumento' => InstrumentoHelper::buildFromPath($acao->fresh()->instrumento_path, $acao->fresh()->updated_at)
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->removeInstrumentoFile($path ?? null);
+
+            return response()->json([
+                'message' => 'Erro ao enviar instrumento.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteInstrumento(Request $request, string $id)
+    {
+        $acao = $this->baseAcaoQuery($request)
+            ->lockForUpdate()
+            ->findOrFail($id);
+        $this->authorize('update', $acao);
+
+        if (!$acao->instrumento_path) {
+            return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $this->removeInstrumentoFile($acao->instrumento_path);
+            $acao->update(['instrumento_path' => null]);
+            DB::commit();
+
+            return response()->json(['message' => 'Instrumento removido com sucesso.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Erro ao remover instrumento.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function downloadInstrumento(Request $request, string $id)
+    {
+        $acao = $this->fetchAcao($request, $id);
+        $this->authorize('view', $acao);
+
+        if (!$acao->instrumento_path) {
+            return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
+        }
+
+        $fullPath = Storage::disk('public')->path($acao->instrumento_path);
+        $basePath = Storage::disk('public')->path('instrumentos');
+
+        if (!Storage::disk('public')->exists($acao->instrumento_path)) {
+            $acao->update(['instrumento_path' => null]);
+            return response()->json(['message' => 'Arquivo não encontrado.'], 404);
+        }
+
+        if (strpos(realpath($fullPath), realpath($basePath)) !== 0) {
+            abort(403, 'Acesso negado.');
+        }
+
+        $extension = pathinfo($acao->instrumento_path, PATHINFO_EXTENSION);
+        $safeFilename = 'instrumento_acao_' . $acao->id . '_' . date('Ymd') . '.' . $extension;
+        $mime = Storage::disk('public')->mimeType($acao->instrumento_path);
+
+        return response()->download($fullPath, $safeFilename, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'attachment; filename="' . $safeFilename . '"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private function baseAcaoQuery(Request $request)
+    {
+        return Acao::where('deputado_id', $request->user()->deputado_id);
+    }
+
+    private function listRelations(): array
+    {
+        return [
+            'municipio:id_municipio,nome',
+            'orgao.tipoOrgao.esferaGoverno',
+            'orgao:id,tipo_orgao_id,nome,sigla',
+            'categoriaInvestimento:id,nome',
+            'status:id,nome,slug'
+        ];
+    }
+
+    private function detailRelations(): array
+    {
+        return [
+            'municipio:id_municipio,nome',
+            'orgao.tipoOrgao.esferaGoverno',
+            'orgao:id,tipo_orgao_id,nome,sigla',
+            'categoriaInvestimento:id,nome',
+            'tipoAcao:id,nome',
+            'status:id,nome',
+            'liderancas:id,nome'
+        ];
+    }
+
+    private function transformListItem(Acao $acao): array
+    {
+        return [
+            'id' => $acao->id,
+            'governo' => $acao->orgao->tipoOrgao->esferaGoverno->nome ?? '-',
+            'titulo' => $acao->titulo,
+            'orgao' => $acao->orgao->sigla ?? $acao->orgao->nome ?? '-',
+            'categoria' => $acao->categoriaInvestimento->nome ?? '-',
+            'municipio' => $acao->municipio->nome ?? '-',
+            'valor' => (float) $acao->valor,
+            'ano' => $acao->ano,
+            'status' => $acao->status->nome ?? '-',
+            'observacao' => $acao->observacao,
+            'instrumento_path' => $acao->instrumento_path ? md5($acao->instrumento_path) : null,
+        ];
+    }
+
+    private function fetchAcao(Request $request, string $id, array $relations = []): Acao
+    {
+        return $this->baseAcaoQuery($request)
+            ->with($relations)
+            ->findOrFail($id);
+    }
+
+
+    private function validateInstrumento(Request $request): void
+    {
         $request->validate([
             'instrumento' => [
                 'required',
                 'file',
-                'mimes:pdf,doc,docx,jpg,jpeg,png', // Tipos permitidos
-                'max:20480', // 20MB
+                'mimes:pdf,doc,docx,jpg,jpeg,png',
+                'max:20480',
                 function ($attribute, $value, $fail) {
-                    // ⬇️ SEGURANÇA: Valida MIME type real (não só extensão)
                     $allowedMimes = [
                         'application/pdf',
                         'application/msword',
@@ -242,7 +292,6 @@ class AcaoController extends Controller
                         $fail('O tipo de arquivo não é permitido.');
                     }
 
-                    // ⬇️ SEGURANÇA: Valida conteúdo do arquivo (anti-spoofing)
                     $finfo = finfo_open(FILEINFO_MIME_TYPE);
                     $realMime = finfo_file($finfo, $value->getRealPath());
                     finfo_close($finfo);
@@ -258,138 +307,17 @@ class AcaoController extends Controller
             'instrumento.mimes' => 'O arquivo deve ser PDF, DOC, DOCX, JPG ou PNG.',
             'instrumento.max' => 'O arquivo deve ter no máximo 20MB.',
         ]);
-
-        // ⬇️ RACE CONDITION: Usa lock otimista
-        $acao = $request->user()->acoes()->lockForUpdate()->findOrFail($id);
-
-        // ⬇️ SEGURANÇA: Nome de arquivo único e sanitizado
-        $extension = $request->file('instrumento')->extension();
-        $safeFilename = Str::uuid() . '_' . time() . '.' . $extension;
-        
-        // ⬇️ Usa transaction para garantir atomicidade
-        DB::beginTransaction();
-        try {
-            // Salva novo arquivo
-            $path = $request->file('instrumento')
-                ->storeAs('instrumentos', $safeFilename, 'public');
-
-            // Deleta arquivo antigo se existir
-            if ($acao->instrumento_path && Storage::disk('public')->exists($acao->instrumento_path)) {
-                Storage::disk('public')->delete($acao->instrumento_path);
-            }
-
-            // Atualiza banco
-            $acao->update(['instrumento_path' => $path]);
-
-            DB::commit();
-
-            // ⬇️ Retorna informações completas do arquivo
-            $fullPath = Storage::disk('public')->path($path);
-            $sizeInBytes = filesize($fullPath);
-            
-            if ($sizeInBytes >= 1048576) {
-                $sizeFormatted = round($sizeInBytes / 1048576, 2) . ' MB';
-            } else {
-                $sizeFormatted = round($sizeInBytes / 1024, 2) . ' KB';
-            }
-
-            return response()->json([
-                'message' => 'Instrumento enviado com sucesso.',
-                'instrumento' => [
-                    'exists' => true,
-                    'filename' => $safeFilename,
-                    'extension' => strtoupper($extension),
-                    'size_bytes' => $sizeInBytes,
-                    'size_formatted' => $sizeFormatted,
-                    'mime_type' => Storage::disk('public')->mimeType($path),
-                    'uploaded_at' => now()->format('d/m/Y H:i'),
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            // Remove arquivo se deu erro no banco
-            if (isset($path) && Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
-
-            return response()->json([
-                'message' => 'Erro ao enviar instrumento.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
     }
 
-    /**
-     * Remove instrumento
-     */
-    public function deleteInstrumento(Request $request, string $id)
+    private function storeInstrumentoFile($file, string $filename): string
     {
-        // ⬇️ RACE CONDITION: Lock otimista
-        $acao = $request->user()->acoes()->lockForUpdate()->findOrFail($id);
-
-        if (!$acao->instrumento_path) {
-            return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
-        }
-
-        DB::beginTransaction();
-        try {
-            // Deleta arquivo físico
-            if (Storage::disk('public')->exists($acao->instrumento_path)) {
-                Storage::disk('public')->delete($acao->instrumento_path);
-            }
-
-            // Atualiza banco
-            $acao->update(['instrumento_path' => null]);
-
-            DB::commit();
-
-            return response()->json(['message' => 'Instrumento removido com sucesso.']);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Erro ao remover instrumento.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return $file->storeAs('instrumentos', $filename, 'public');
     }
 
-    public function downloadInstrumento(Request $request, string $id)
+    private function removeInstrumentoFile(?string $path): void
     {
-        $acao = $request->user()->acoes()->findOrFail($id);
-
-        if (!$acao->instrumento_path) {
-            return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
         }
-
-        // ⬇️ SEGURANÇA: Valida que arquivo ainda existe
-        if (!Storage::disk('public')->exists($acao->instrumento_path)) {
-            // Limpa referência órfã do banco
-            $acao->update(['instrumento_path' => null]);
-            return response()->json(['message' => 'Arquivo não encontrado.'], 404);
-        }
-
-        // ⬇️ SEGURANÇA: Valida que caminho não foi manipulado (path traversal)
-        $fullPath = Storage::disk('public')->path($acao->instrumento_path);
-        $basePath = Storage::disk('public')->path('instrumentos');
-        
-        if (strpos(realpath($fullPath), realpath($basePath)) !== 0) {
-            abort(403, 'Acesso negado.');
-        }
-
-        // ⬇️ Nome de arquivo seguro para download
-        $extension = pathinfo($acao->instrumento_path, PATHINFO_EXTENSION);
-        $safeFilename = 'instrumento_acao_' . $acao->id . '_' . date('Ymd') . '.' . $extension;
-
-        // ⬇️ MIME type correto
-        $mime = Storage::disk('public')->mimeType($acao->instrumento_path);
-
-        return response()->download($fullPath, $safeFilename, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'attachment; filename="' . $safeFilename . '"',
-            'X-Content-Type-Options' => 'nosniff', // Previne MIME sniffing
-        ]);
     }
 }

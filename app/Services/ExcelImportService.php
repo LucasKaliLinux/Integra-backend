@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Helpers\CacheHelper;
 use App\Models\Import;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 
@@ -62,6 +63,7 @@ class ExcelImportService
             }
 
             $this->import->markAsCompleted();
+            CacheHelper::invalidarTudo($this->userId);
 
         } catch (\Exception $e) {
             Log::error('Erro na importação de ações', [
@@ -259,7 +261,7 @@ class ExcelImportService
 
                 // Verifica duplicata
                 $existe = DB::table('acoes')
-                    ->where('user_id', $this->userId)
+                    ->where('deputado_id', $this->import->deputado_id)
                     ->where('titulo', $titulo)
                     ->where('id_municipio', $municipioId)
                     ->where('ano', $ano)
@@ -273,6 +275,7 @@ class ExcelImportService
 
                 // Adiciona à lista
                 $acoesParaInserir[] = [
+                    'deputado_id' => $this->import->deputado_id,
                     'user_id' => $this->userId,
                     'id_municipio' => $municipioId,
                     'orgao_governo_id' => $orgaoId,

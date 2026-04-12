@@ -19,8 +19,7 @@ class LiderancaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = $request->user()
-            ->liderancas()
+        $query = Lideranca::where('deputado_id', $request->user()->deputado_id)
             ->with([
                 'municipio:id_municipio,nome',
                 'classificacao:id,nome,slug',
@@ -43,6 +42,8 @@ class LiderancaController extends Controller
      */
     public function store(StoreLiderancaRequest $request)
     {
+        $this->authorize('create', Lideranca::class);
+
         if (!Lideranca::cargoPertenceAClassificacao(
             $request->funcao_id,
             $request->classificacao_id
@@ -52,7 +53,11 @@ class LiderancaController extends Controller
             ], 422);
         }
 
-        $lideranca = $request->user()->liderancas()->create($request->validated());
+        $lideranca = new Lideranca($request->validated());
+        $lideranca->deputado_id = $request->user()->deputado_id;
+        $lideranca->user_id = $request->user()->id;
+        $lideranca->save();
+
         CacheHelper::invalidarMunicipio($lideranca->id_municipio, $request->user()->id);
 
         return new LiderancaResource($lideranca);
@@ -64,11 +69,13 @@ class LiderancaController extends Controller
      */
     public function show(Request $request ,string $id)
     {
-        $lideranca = $request->user()->liderancas()->with([
+        $lideranca = Lideranca::where('deputado_id', $request->user()->deputado_id)->with([
             'municipio',
             'classificacao',
             'funcao'
         ])->findOrFail($id);
+
+        $this->authorize('view', $lideranca);
 
         return new LiderancaResource($lideranca);
     }
@@ -78,10 +85,10 @@ class LiderancaController extends Controller
      */
     public function update(UpdateLiderancaRequest $request, $id)
     {
-        $lideranca = $request->user()
-            ->liderancas()
+        $lideranca = Lideranca::where('deputado_id', $request->user()->deputado_id)
             ->with('funcao')
             ->findOrFail($id);
+        $this->authorize('update', $lideranca);
 
         $isPrefeitoOuVereador = in_array($lideranca->funcao?->slug, ['prefeito', 'vereador']);
 
@@ -116,9 +123,8 @@ class LiderancaController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $lideranca = $request->user()
-            ->liderancas()
-            ->findOrFail($id);
+        $lideranca = Lideranca::where('deputado_id', $request->user()->deputado_id)->findOrFail($id);
+        $this->authorize('delete', $lideranca);
 
         $lideranca->delete();
 

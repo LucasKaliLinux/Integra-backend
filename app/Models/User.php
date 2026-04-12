@@ -4,14 +4,19 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -19,9 +24,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'deputado_id',
         'name',
         'email',
         'password',
+        'ativo'
     ];
 
     /**
@@ -32,7 +39,6 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'titulo_eleitoral',
         'email_verified_at',
         'created_at',
         'updated_at'
@@ -51,17 +57,26 @@ class User extends Authenticatable
         ];
     }
 
-    public function acoes()
+    public function deputado(): BelongsTo
     {
+        return $this->belongsTo(Deputado::class);
+    }
+
+    public function acoes(): HasMany
+    {
+        // ⚠️ NOTA: Acões pertencem ao DEPUTADO, não ao user
+        // Esta relação existe por compatibilidade, mas use deputado->acoes() quando possível
         return $this->hasMany(Acao::class);
     }
 
-    public function liderancas()
+    public function liderancas(): HasMany
     {
+        // ⚠️ NOTA: Lideranças pertencem ao DEPUTADO, não ao user
+        // Esta relação existe por compatibilidade, mas use deputado->liderancas() quando possível
         return $this->hasMany(Lideranca::class);
     }
 
-    public function municipios()
+    public function municipios(): BelongsToMany
     {
         return $this->belongsToMany(
             Municipio::class,
@@ -73,8 +88,11 @@ class User extends Authenticatable
         );
     }
 
-    public function municipiosSelecionados()
+    public function municipiosSelecionados(): BelongsToMany
     {
+        // ⚠️ DEPRECATED: Municípios agora são do DEPUTADO, não do usuário
+        // Use $user->deputado->municipios() ao invés desta relação
+        // Esta relação existe apenas por compatibilidade temporária
         return $this->belongsToMany(Municipio::class, 'user_municipios', 'user_id', 'id_municipio');
     }
 

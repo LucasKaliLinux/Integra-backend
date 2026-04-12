@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Acao;
+use App\Models\Lideranca;
 use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,20 +15,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
-    // public function senha(){
-    //     $senha = Hash::make('Vb102030@');
-    //     return response()->json([
-    //         'hash' => $senha
-    //     ]);
-    // }
-
     public function metadata(Request $request)
     {
         $user = $request->user();
 
         $dados = Cache::remember("acoes_metadata_{$user->id}", 1800, function() use ($user) {
             
-            $stats = $user->acoes()
+            $stats = Acao::where('deputado_id', $user->deputado_id)
                 ->selectRaw('
                     MIN(ano) as ano_min,
                     MAX(ano) as ano_max,
@@ -36,7 +31,6 @@ class AuthController extends Controller
                 ')
                 ->first();
 
-            // Se não tiver ações, retorna valores padrão
             if (!$stats || $stats->total_acoes === 0) {
                 return [
                     'ano_min' => date('Y') - 5,
@@ -59,8 +53,8 @@ class AuthController extends Controller
         return response()->json($dados);
     }
 
-    public function login(LoginRequest $request){
-
+    public function login(LoginRequest $request)
+    {
         if (!Auth::attempt($request->validated())) {
             return response()->json([
                 'message' => 'Credenciais inválidas'
@@ -73,29 +67,63 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => $user
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'deputado' => [
+                    'id' => $user->deputado->id,
+                    'nome' => $user->deputado->nome,
+                    'partido' => $user->deputado->partido,
+                    'cargo' => $user->deputado->cargo,
+                ],
+                'role' => $user->getRoleNames(), // ⬅️ NOVO: Spatie roles
+            ]
         ]);
     }
 
-    public function me(Request $request) {
-        return response()->json($request->user(), 200);
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'deputado' => [
+                'id' => $user->deputado->id,
+                'nome' => $user->deputado->nome,
+                'partido' => $user->deputado->partido,
+                'cargo' => $user->deputado->cargo,
+            ],
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ], 200);
     }
 
     public function dashboard(Request $request)
     {
         $user = $request->user();
 
-        // Cache por 30 minutos (dashboard muda com frequência)
-        $dados = Cache::remember("dashboard_{$user->id}", 1800, function() use ($user) {
+        // ⬇️ MUDANÇA: Carrega deputado pra evitar N+1
+        $deputado = $user->deputado;
+
+        if (!$deputado) {
+            return response()->json([
+                'error' => 'Usuário não vinculado a nenhum deputado'
+            ], 403);
+        }
+
+        $dados = Cache::remember("dashboard_{$user->id}", 1800, function() use ($user, $deputado) {
             
             // ========== KPIs ========== 
             
             // 1️⃣ Total de municípios selecionados
-            $totalMunicipios = $user->municipios()->count();
+            $totalMunicipios = $deputado->municipios()->count(); // ⬅️ MUDANÇA
 
             // 2️⃣ Ano base mais recente
             $anoBase = DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                ->where('titulo_eleitoral_candidato', $deputado->titulo_eleitoral) // ⬅️ MUDANÇA
                 ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                 ->max('ano');
 
@@ -104,17 +132,17 @@ class AuthController extends Controller
             
             if ($anoBase && $totalMunicipios > 0) {
                 // IDs dos municípios selecionados
-                $municipiosSelecionados = $user->municipios()->pluck('municipios.id_municipio');
+                $municipiosSelecionados = $deputado->municipios()->pluck('municipios.id_municipio'); // ⬅️ MUDANÇA
 
-                // 3️⃣ Total de eleitores (soma dos municípios selecionados)
+                // 3️⃣ Total de eleitores
                 $totalEleitores = DB::table('eleitores')
                     ->whereIn('id_municipio', $municipiosSelecionados)
                     ->where('ano', $anoBase)
                     ->sum('total_eleitores');
 
-                // 4️⃣ Total de votos (soma dos municípios selecionados)
+                // 4️⃣ Total de votos
                 $totalVotos = DB::table('votacao')
-                    ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                    ->where('titulo_eleitoral_candidato', $deputado->titulo_eleitoral) // ⬅️ MUDANÇA
                     ->whereIn('id_municipio', $municipiosSelecionados)
                     ->where('ano', $anoBase)
                     ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
@@ -122,13 +150,12 @@ class AuthController extends Controller
             }
 
             // 5️⃣ Total de lideranças
-            $totalLiderancas = $user->liderancas()->count();
+            $totalLiderancas = Lideranca::where('deputado_id', $user->deputado_id)->count();
 
-            // 6️⃣  VOTOS POTENCIAIS DAS LIDERANÇAS ALIADAS
-            // $totalAcoes = $user->acoes()->count();
+            // 6️⃣ Votos potenciais
             $votosPotenciais = 0;
 
-            $municipiosComLiderancas = $user->liderancas()
+            $municipiosComLiderancas = Lideranca::where('deputado_id', $user->deputado_id)
                 ->join('liderancas_politicas as lp', 'lp.lideranca_id', '=', 'liderancas.id')
                 ->join('votacao as v', function($join) {
                     $join->on('v.sequencial_candidato', '=', 'lp.sequencial_candidato')
@@ -148,10 +175,8 @@ class AuthController extends Controller
                 $prefeitos = $liderancas->filter(fn($l) => $l->cargo_slug === 'prefeito');
                 
                 if ($prefeitos->isNotEmpty()) {
-                    // Tem prefeito aliado — usa só os votos dele
                     $votosPotenciais += $prefeitos->sum('votos');
                 } else {
-                    // Não tem prefeito — soma todos os vereadores aliados
                     $votosPotenciais += $liderancas->sum('votos');
                 }
             }
@@ -164,16 +189,15 @@ class AuthController extends Controller
                 // Subquery de votos
                 $subVotos = DB::table('votacao')
                     ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-                    ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                    ->where('titulo_eleitoral_candidato', $deputado->titulo_eleitoral) // ⬅️ MUDANÇA
                     ->where('ano', $anoBase)
                     ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                     ->groupBy('id_municipio');
 
-                // Query com score (igual autoSelect)
                 $topMunicipios = DB::table('eleitores as e')
                     ->join('municipios as m', 'm.id_municipio', '=', 'e.id_municipio')
                     ->joinSub($subVotos, 'v', 'v.id_municipio', '=', 'e.id_municipio')
-                    ->whereIn('e.id_municipio', $municipiosSelecionados) // ⬅️ SÓ os selecionados!
+                    ->whereIn('e.id_municipio', $municipiosSelecionados)
                     ->where('e.ano', $anoBase)
                     ->where('e.total_eleitores', '>', 0)
                     ->select([
@@ -185,7 +209,7 @@ class AuthController extends Controller
                         DB::raw('(v.votos * 0.7) + ((v.votos / e.total_eleitores) * e.total_eleitores * 0.3) as score')
                     ])
                     ->orderByDesc('score')
-                    ->limit(8) // ⬅️ Top 5
+                    ->limit(8)
                     ->get()
                     ->map(function($item) {
                         return [
@@ -200,7 +224,7 @@ class AuthController extends Controller
 
             // ========== AÇÕES RECENTES ==========
             
-            $acoesRecentes = $user->acoes()
+            $acoesRecentes = Acao::where('deputado_id', $user->deputado_id)
                 ->with([
                     'municipio:id_municipio,nome',
                     'orgao:id,nome,sigla',
@@ -208,10 +232,10 @@ class AuthController extends Controller
                 ])
                 ->select([
                     'id',
-                    'titulo',                    // ⬅️ Título da ação
+                    'titulo',
                     'id_municipio',
-                    'orgao_governo_id',          // ⬅️ Pra carregar órgão
-                    'status_id',                 // ⬅️ Pra carregar status
+                    'orgao_governo_id',
+                    'status_id',
                     'valor',
                     'ano',
                     'created_at'
@@ -222,13 +246,13 @@ class AuthController extends Controller
                 ->map(function($acao) {
                     return [
                         'id' => $acao->id,
-                        'titulo' => $acao->titulo,                           // ⬅️ Mais descritivo
+                        'titulo' => $acao->titulo,
                         'municipio' => $acao->municipio?->nome ?? 'N/A',
-                        'orgao' => $acao->orgao?->sigla ?? $acao->orgao?->nome ?? 'N/A', // ⬅️ Sigla ou nome
+                        'orgao' => $acao->orgao?->sigla ?? $acao->orgao?->nome ?? 'N/A',
                         'valor' => (float) $acao->valor,
-                        'status' => $acao->status?->nome ?? 'N/A',           // ⬅️ Nome do status
+                        'status' => $acao->status?->nome ?? 'N/A',
                         'ano' => $acao->ano,
-                        'dias_atras' => $acao->created_at->diffForHumans()   // ⬅️ "há 2 dias"
+                        'dias_atras' => $acao->created_at->diffForHumans()
                     ];
                 });
 
@@ -248,7 +272,8 @@ class AuthController extends Controller
         return response()->json($dados);
     }
 
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([

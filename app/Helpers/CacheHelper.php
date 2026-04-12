@@ -69,10 +69,10 @@ class CacheHelper
         // ⬇️ NOVO: Invalida dados do template Excel
         self::invalidarExcelTemplate($userId);
 
-        // Invalida ano base (usado em várias queries)
-        $tituloEleitoral = \App\Models\User::find($userId)?->titulo_eleitoral;
-        if ($tituloEleitoral) {
-            Cache::forget("ano_base_{$tituloEleitoral}");
+        // Invalida ano base (pega deputado_id do user)
+        $user = \App\Models\User::find($userId);
+        if ($user && $user->deputado) {
+            Cache::forget("ano_base_{$user->deputado->titulo_eleitoral}");
         }
 
         // Nota: Cache::forget não suporta wildcards com file driver

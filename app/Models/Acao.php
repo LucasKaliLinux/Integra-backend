@@ -9,13 +9,13 @@ class Acao extends Model
     protected $table = 'acoes';
 
     protected $fillable = [
+        'deputado_id',
         'user_id',
         'id_municipio',
         'orgao_governo_id',
         'categoria_investimento_id',
         'tipo_acao_id',
         'status_id',
-        'lideranca_solicitante_id',
         'titulo',
         'numero_sei',
         'instrumento_path',
@@ -30,6 +30,11 @@ class Acao extends Model
     ];
 
     // Relationships
+    public function deputado()
+    {
+        return $this->belongsTo(Deputado::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -60,14 +65,20 @@ class Acao extends Model
         return $this->belongsTo(StatusAcao::class, 'status_id');
     }
 
-    public function liderancaSolicitante()
+     public function liderancas()
     {
-        return $this->belongsTo(Lideranca::class, 'lideranca_solicitante_id');
+        return $this->belongsToMany(Lideranca::class, 'acao_lideranca')
+            ->withTimestamps();
     }
 
     public function historico()
     {
         return $this->hasMany(AcaoHistorico::class, 'acao_id')->orderBy('created_at');
+    }
+
+    public function scopeForDeputado($query, $deputadoId)
+    {
+        return $query->where('deputado_id', $deputadoId);
     }
     
     /**

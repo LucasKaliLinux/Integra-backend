@@ -15,17 +15,14 @@ class EstrategiaController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        //$search = $request->input('search'); // ⬅️ pega o search
 
-        // 1️⃣ Cache do ano base (evita rodar toda hora)
-        $anoBase = Cache::remember("ano_base_{$user->titulo_eleitoral}", 3600, function() use ($user) {
+        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
             return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
                 ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                 ->max('ano');
         });
 
-        // Se não encontrou ano, retorna vazio mais rápido
         if (!$anoBase) {
             return Municipio::query()
                 ->from('municipios as m')
@@ -42,15 +39,13 @@ class EstrategiaController extends Controller
                 ->paginate(9);
         }
 
-        // 2️⃣ Subquery otimizada (já com ano fixo)
         $subVotos = DB::table('votacao')
             ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
-            ->where('ano', $anoBase) // Fixo, sem WHEN
+            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
+            ->where('ano', $anoBase)
             ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
             ->groupBy('id_municipio');
 
-        // 3️⃣ Query principal
         $query = Municipio::query()
             ->from('municipios as m')
             ->select([
@@ -69,7 +64,7 @@ class EstrategiaController extends Controller
             })
             ->leftJoin('user_municipios as um', function ($join) use ($user) {
                 $join->on('um.id_municipio', '=', 'm.id_municipio')
-                    ->where('um.user_id', '=', $user->id);
+                    ->where('um.deputado_id', '=', $user->deputado_id);  // ✅ Filtrar por deputado
             })
             ->orderBy('m.nome');
 
@@ -81,10 +76,9 @@ class EstrategiaController extends Controller
         $user = $request->user();
         $perPage = min($request->input('per_page', 10), 418);
 
-        $sortBy = $request->input('sort_by', 'nome'); // Padrão: nome alfabético
+        $sortBy = $request->input('sort_by', 'nome');
         $sortOrder = $request->input('sort_order', 'asc');
 
-        // Campos permitidos para ordenação
         $allowedSorts = [
             'nome',
             'populacao',
@@ -93,17 +87,15 @@ class EstrategiaController extends Controller
             'percentual_votos'
         ];
 
-        // Valida
         if (!in_array($sortBy, $allowedSorts)) {
             $sortBy = 'nome';
         }
 
         $sortOrder = strtolower($sortOrder) === 'desc' ? 'desc' : 'asc';
     
-        // Descobre ano base
-        $anoBase = Cache::remember("ano_base_{$user->titulo_eleitoral}", 3600, function() use ($user) {
+        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
             return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
                 ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                 ->max('ano');
         });
@@ -112,16 +104,14 @@ class EstrategiaController extends Controller
             return response()->json(['message' => 'Nenhuma eleição encontrada.'], 404);
         }
         
-        // Subquery de votos
         $subVotos = DB::table('votacao')
             ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
             ->where('ano', $anoBase)
             ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
             ->groupBy('id_municipio');
         
-        // Query usando relationship + Query Builder híbrido
-        $query = $user->municipiosSelecionados()
+        $query = $user->deputado->municipios()
             ->leftJoin('eleitores as e', function($join) use ($anoBase) {
                 $join->on('e.id_municipio', '=', 'municipios.id_municipio')
                     ->where('e.ano', '=', $anoBase);
@@ -150,7 +140,13 @@ class EstrategiaController extends Controller
 
         $user = $request->user();
 
-        $user->municipios()->sync($request->municipios);
+        $syncData = collect($request->municipios)
+            ->mapWithKeys(fn ($municipioId) => [
+                $municipioId => ['user_id' => $user->id]
+            ])
+            ->toArray();
+
+        $user->deputado->municipios()->sync($syncData);
 
         CacheHelper::invalidarTudo($user->id);
 
@@ -163,10 +159,9 @@ class EstrategiaController extends Controller
     {
         $user = $request->user();
 
-        // 1️⃣ Cache do ano base
-        $anoBase = Cache::remember("ano_base_{$user->titulo_eleitoral}", 3600, function() use ($user) {
+        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
             return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
                 ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                 ->max('ano');
         });
@@ -175,16 +170,14 @@ class EstrategiaController extends Controller
             return response()->json([]);
         }
 
-        // 2️⃣ Subquery de votos
         $subVotos = DB::table('votacao')
             ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
             ->where('ano', $anoBase)
             ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
             ->groupBy('id_municipio');
 
-        // 3️⃣ Busca SOMENTE os municípios selecionados (user_municipios)
-        $municipiosSelecionados = $user->municipiosSelecionados()
+        $municipiosSelecionados = $user->deputado->municipios()
             ->leftJoin('eleitores as e', function($join) use ($anoBase) {
                 $join->on('e.id_municipio', '=', 'municipios.id_municipio')
                     ->where('e.ano', '=', $anoBase);
@@ -206,10 +199,9 @@ class EstrategiaController extends Controller
     {
         $user = $request->user();
 
-        // 1️⃣ Cache do ano base (evita rodar toda hora)
-        $anoBase = Cache::remember("ano_base_{$user->titulo_eleitoral}", 3600, function() use ($user) {
+        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
             return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
                 ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                 ->max('ano');
         });
@@ -220,10 +212,9 @@ class EstrategiaController extends Controller
             ], 404);
         }
 
-        // Agrupa ANTES do JOIN = mais eficiente
         $subVotos = DB::table('votacao')
             ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->titulo_eleitoral)
+            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
             ->where('ano', $anoBase)
             ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
             ->groupBy('id_municipio');

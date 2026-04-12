@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Acao;
 use App\Models\Export;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -62,7 +63,7 @@ class PdfExportService
 
     private function fetchAcoes()
     {
-        $query = $this->user->acoes()
+        $query = Acao::where('deputado_id', $this->user->deputado_id)
             ->with([
                 'municipio:id_municipio,nome',
                 'orgao.tipoOrgao.esferaGoverno',
@@ -70,7 +71,7 @@ class PdfExportService
                 'categoriaInvestimento:id,nome',
                 'tipoAcao:id,nome',
                 'status:id,nome,slug',
-                'liderancaSolicitante:id,nome'
+                'liderancas:id,nome'
             ])
             ->select([
                 'id',
@@ -81,7 +82,7 @@ class PdfExportService
                 'categoria_investimento_id',
                 'tipo_acao_id',
                 'status_id',
-                'lideranca_solicitante_id',
+                // 'lideranca_solicitante_id',
                 'valor',
                 'ano',
                 'observacao'
@@ -111,7 +112,7 @@ class PdfExportService
                 'status' => $acao->status->nome ?? '-',
                 'status_slug' => $acao->status->slug ?? 'solicitado', // ⬅️ NOVO
                 'tipo' => $acao->tipoAcao->nome ?? '-',
-                'lideranca' => $acao->liderancaSolicitante?->nome ?? $this->user->name,
+                'lideranca' => $acao->liderancas->first()?->nome ?? $this->user->name,
                 'numero_sei' => $acao->numero_sei,
                 'observacao' => $acao->observacao
             ];

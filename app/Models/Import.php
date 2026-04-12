@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Import extends Model
 {
     protected $fillable = [
+        'deputado_id',
         'user_id',
         'filename',
         'original_filename',
@@ -25,6 +26,11 @@ class Import extends Model
         'started_at' => 'datetime',
         'completed_at' => 'datetime'
     ];
+
+    public function deputado()
+    {
+        return $this->belongsTo(Deputado::class);
+    }
 
     public function user()
     {

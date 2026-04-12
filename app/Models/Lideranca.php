@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lideranca extends Model
 {
-    protected $table = 'liderancas';
-
     protected $fillable = [
         'id_municipio',
+        'deputado_id',      // ✅ Relacionamento principal
+        'user_id',          // ⚠️ NOTA: Considera-se que é campo legado ou para audit
         'classificacao_id',
         'funcao_id',
         'nome',
@@ -22,6 +22,11 @@ class Lideranca extends Model
     protected $hidden = [
         'slug'
     ];
+
+    public function scopeForDeputado($query, $deputadoId)
+    {
+        return $query->where('deputado_id', $deputadoId);
+    }
 
     public function scopeFilter($query, $filters)
     {
@@ -66,6 +71,11 @@ class Lideranca extends Model
     | RELACIONAMENTOS
     |--------------------------------------------------------------------------
     */
+
+    public function deputado()
+    {
+        return $this->belongsTo(Deputado::class);
+    }
 
     public function user()
     {
