@@ -18,6 +18,7 @@ class LiderancaResource extends JsonResource
             'id' => $this->id,
             'nome' => $this->nome,
             'telefone' => $this->telefone,
+            'instagram' => $this->instagram,
             'data_nascimento' => $this->data_nascimento,
             'alinhamento' => $this->alinhamento,
             'observacao' => $this->observacao,
@@ -33,7 +34,7 @@ class LiderancaResource extends JsonResource
                 return [
                     'id' => $this->classificacao->id,
                     'nome' => $this->classificacao->nome,
-                    'slug' => $this->classificacao->slug
+                    'slug' => $this->classificacao->slug,
                 ];
             }),
 
@@ -41,10 +42,9 @@ class LiderancaResource extends JsonResource
                 return [
                     'id' => $this->funcao->id,
                     'nome' => $this->funcao->nome,
-                    'slug' => $this->funcao->slug
+                    'slug' => $this->funcao->slug,
                 ];
             }),
         ];
     }
-
 }

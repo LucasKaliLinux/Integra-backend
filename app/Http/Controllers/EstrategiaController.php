@@ -3,27 +3,70 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CacheHelper;
-use App\Http\Controllers\Controller;
 use App\Http\Resources\MunicipioPortifolioResource;
 use App\Models\Municipio;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class EstrategiaController extends Controller
 {
-    public function index(Request $request)
-    {
-        $user = $request->user();
+    /**
+     * Corte mínimo de penetração eleitoral (votos / total de eleitores)
+     * exigido para um município entrar na seleção automática de estratégia.
+     */
+    private const CORTE_MINIMO_PENETRACAO = 0.02;
 
-        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
+    /**
+     * Quantidade padrão de municípios retornados pela seleção automática
+     * quando o parâmetro `quantidade` não é informado.
+     */
+    private const QUANTIDADE_PADRAO = 30;
+
+    private const QUANTIDADE_MINIMA = 5;
+
+    /**
+     * Universo total de municípios da Bahia — limite superior sensato para
+     * o parâmetro `quantidade`.
+     */
+    private const QUANTIDADE_MAXIMA = 417;
+
+    /**
+     * Resolve o ano-base (ano eleitoral mais recente com dados de votação
+     * para o deputado autenticado), em cache por 1h.
+     */
+    private function resolverAnoBase(User $user): ?int
+    {
+        return Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function () use ($user) {
             return DB::table('votacao')
                 ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
                 ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
                 ->max('ano');
         });
+    }
 
-        if (!$anoBase) {
+    /**
+     * Subquery com o total de votos do deputado autenticado por município,
+     * no ano-base informado.
+     */
+    private function subVotosQuery(User $user, int $anoBase)
+    {
+        return DB::table('votacao')
+            ->select('id_municipio', DB::raw('SUM(votos) as votos'))
+            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
+            ->where('ano', $anoBase)
+            ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
+            ->groupBy('id_municipio');
+    }
+
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $anoBase = $this->resolverAnoBase($user);
+
+        if (! $anoBase) {
             return Municipio::query()
                 ->from('municipios as m')
                 ->select([
@@ -32,19 +75,14 @@ class EstrategiaController extends Controller
                     'm.populacao',
                     DB::raw('0 as total_eleitores'),
                     DB::raw('0 as votos'),
-                    DB::raw('0 as selecionado')
+                    DB::raw('0 as selecionado'),
                 ])
                 ->filter($request->all())
                 ->orderBy('m.nome')
                 ->paginate(9);
         }
 
-        $subVotos = DB::table('votacao')
-            ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-            ->where('ano', $anoBase)
-            ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-            ->groupBy('id_municipio');
+        $subVotos = $this->subVotosQuery($user, $anoBase);
 
         $query = Municipio::query()
             ->from('municipios as m')
@@ -54,7 +92,7 @@ class EstrategiaController extends Controller
                 'm.populacao',
                 DB::raw('IFNULL(e.total_eleitores, 0) as total_eleitores'),
                 DB::raw('IFNULL(v.votos, 0) as votos'),
-                DB::raw('IF(um.id IS NOT NULL, 1, 0) as selecionado')
+                DB::raw('IF(um.id IS NOT NULL, 1, 0) as selecionado'),
             ])
             ->filter($request->all())
             ->leftJoinSub($subVotos, 'v', 'v.id_municipio', '=', 'm.id_municipio')
@@ -84,35 +122,25 @@ class EstrategiaController extends Controller
             'populacao',
             'total_eleitores',
             'votos',
-            'percentual_votos'
+            'percentual_votos',
         ];
 
-        if (!in_array($sortBy, $allowedSorts)) {
+        if (! in_array($sortBy, $allowedSorts)) {
             $sortBy = 'nome';
         }
 
         $sortOrder = strtolower($sortOrder) === 'desc' ? 'desc' : 'asc';
-    
-        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
-            return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-                ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-                ->max('ano');
-        });
-        
-        if (!$anoBase) {
+
+        $anoBase = $this->resolverAnoBase($user);
+
+        if (! $anoBase) {
             return response()->json(['message' => 'Nenhuma eleição encontrada.'], 404);
         }
-        
-        $subVotos = DB::table('votacao')
-            ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-            ->where('ano', $anoBase)
-            ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-            ->groupBy('id_municipio');
-        
+
+        $subVotos = $this->subVotosQuery($user, $anoBase);
+
         $query = $user->deputado->municipios()
-            ->leftJoin('eleitores as e', function($join) use ($anoBase) {
+            ->leftJoin('eleitores as e', function ($join) use ($anoBase) {
                 $join->on('e.id_municipio', '=', 'municipios.id_municipio')
                     ->where('e.ano', '=', $anoBase);
             })
@@ -123,11 +151,11 @@ class EstrategiaController extends Controller
                 'municipios.populacao',
                 DB::raw('IFNULL(e.total_eleitores, 0) as total_eleitores'),
                 DB::raw('IFNULL(v.votos, 0) as votos'),
-                DB::raw('ROUND((IFNULL(v.votos, 0) / NULLIF(e.total_eleitores, 0)) * 100, 2) as percentual_votos')
+                DB::raw('ROUND((IFNULL(v.votos, 0) / NULLIF(e.total_eleitores, 0)) * 100, 2) as percentual_votos'),
             ])
             ->filter($request->all())
             ->orderBy($sortBy, $sortOrder);
-        
+
         return MunicipioPortifolioResource::collection($query->paginate($perPage));
     }
 
@@ -135,14 +163,14 @@ class EstrategiaController extends Controller
     {
         $request->validate([
             'municipios' => 'required|array|min:1',
-            'municipios.*' => 'integer|exists:municipios,id_municipio'
+            'municipios.*' => 'integer|exists:municipios,id_municipio',
         ]);
 
         $user = $request->user();
 
         $syncData = collect($request->municipios)
             ->mapWithKeys(fn ($municipioId) => [
-                $municipioId => ['user_id' => $user->id]
+                $municipioId => ['user_id' => $user->id],
             ])
             ->toArray();
 
@@ -151,7 +179,7 @@ class EstrategiaController extends Controller
         CacheHelper::invalidarTudo($user->id);
 
         return response()->json([
-            'message' => 'Estratégia atualizada com sucesso.'
+            'message' => 'Estratégia atualizada com sucesso.',
         ]);
     }
 
@@ -159,26 +187,16 @@ class EstrategiaController extends Controller
     {
         $user = $request->user();
 
-        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
-            return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-                ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-                ->max('ano');
-        });
+        $anoBase = $this->resolverAnoBase($user);
 
-        if (!$anoBase) {
+        if (! $anoBase) {
             return response()->json([]);
         }
 
-        $subVotos = DB::table('votacao')
-            ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-            ->where('ano', $anoBase)
-            ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-            ->groupBy('id_municipio');
+        $subVotos = $this->subVotosQuery($user, $anoBase);
 
         $municipiosSelecionados = $user->deputado->municipios()
-            ->leftJoin('eleitores as e', function($join) use ($anoBase) {
+            ->leftJoin('eleitores as e', function ($join) use ($anoBase) {
                 $join->on('e.id_municipio', '=', 'municipios.id_municipio')
                     ->where('e.ano', '=', $anoBase);
             })
@@ -187,7 +205,7 @@ class EstrategiaController extends Controller
                 'municipios.id_municipio',
                 'municipios.populacao',
                 DB::raw('IFNULL(e.total_eleitores, 0) as total_eleitores'),
-                DB::raw('IFNULL(v.votos, 0) as votos')
+                DB::raw('IFNULL(v.votos, 0) as votos'),
             ])
             ->get()
             ->makeHidden('pivot');
@@ -199,46 +217,60 @@ class EstrategiaController extends Controller
     {
         $user = $request->user();
 
-        $anoBase = Cache::remember("ano_base_{$user->deputado->titulo_eleitoral}", 3600, function() use ($user) {
-            return DB::table('votacao')
-                ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-                ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-                ->max('ano');
-        });
+        $request->validate([
+            'quantidade' => ['nullable', 'integer', 'min:'.self::QUANTIDADE_MINIMA, 'max:'.self::QUANTIDADE_MAXIMA],
+        ], [
+            'quantidade.integer' => 'A quantidade deve ser um número inteiro.',
+            'quantidade.min' => 'A quantidade mínima é '.self::QUANTIDADE_MINIMA.' municípios.',
+            'quantidade.max' => 'A quantidade máxima é '.self::QUANTIDADE_MAXIMA.' municípios.',
+        ]);
 
-        if (!$anoBase) {
+        $quantidade = (int) $request->input('quantidade', self::QUANTIDADE_PADRAO);
+
+        $anoBase = $this->resolverAnoBase($user);
+
+        if (! $anoBase) {
             return response()->json([
-                'message' => 'Nenhuma eleição encontrada.'
+                'message' => 'Nenhuma eleição encontrada.',
             ], 404);
         }
 
-        $subVotos = DB::table('votacao')
-            ->select('id_municipio', DB::raw('SUM(votos) as votos'))
-            ->where('titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
-            ->where('ano', $anoBase)
-            ->whereIn('cargo', ['deputado estadual', 'deputado federal'])
-            ->groupBy('id_municipio');
+        $subVotos = $this->subVotosQuery($user, $anoBase);
 
+        // Critério de ranking: percentual de penetração eleitoral
+        // (votos / total_eleitores) decrescente, com votos absolutos como
+        // desempate. Um score ponderado (70% votos + 30% percentual) foi
+        // usado anteriormente, mas era algebricamente equivalente a
+        // ordenar por votos absolutos — o termo de percentual se cancelava
+        // e não influenciava a ordenação.
         $municipios = DB::table('eleitores as e')
             ->joinSub($subVotos, 'v', 'v.id_municipio', '=', 'e.id_municipio')
             ->where('e.ano', $anoBase)
             ->where('e.total_eleitores', '>', 0)
-            ->whereRaw('(v.votos / e.total_eleitores) >= 0.02')
+            ->whereRaw('(v.votos / e.total_eleitores) >= ?', [self::CORTE_MINIMO_PENETRACAO])
             ->select([
                 'e.id_municipio',
                 'v.votos',
                 'e.total_eleitores',
-                DB::raw('(v.votos * 0.7) + ((v.votos / e.total_eleitores) * e.total_eleitores * 0.3) as score')
+                DB::raw('ROUND((v.votos / e.total_eleitores) * 100, 2) as percentual_votos'),
             ])
-            ->orderByDesc('score')
-            ->limit(30)
-            ->get();
+            ->orderByRaw('(v.votos / e.total_eleitores) DESC')
+            ->orderByDesc('v.votos')
+            ->limit($quantidade)
+            ->get()
+            ->map(fn ($municipio) => [
+                'id_municipio' => (int) $municipio->id_municipio,
+                'votos' => (int) $municipio->votos,
+                'total_eleitores' => (int) $municipio->total_eleitores,
+                'percentual_votos' => (float) $municipio->percentual_votos,
+            ]);
 
         return response()->json([
             'message' => 'Seleção automática calculada com sucesso.',
             'ano_base' => $anoBase,
             'quantidade' => $municipios->count(),
-            'municipios_selecionados' => $municipios
+            'corte_minimo_percentual' => self::CORTE_MINIMO_PENETRACAO * 100,
+            'municipios_selecionados' => $municipios,
         ]);
     }
 }

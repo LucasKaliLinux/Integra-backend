@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\SuperAdmin;
 
+use App\Http\Controllers\Controller;
 use App\Models\TipoAcao;
-use Illuminate\Http\Request;
 
 class TipoAcaoController extends Controller
 {

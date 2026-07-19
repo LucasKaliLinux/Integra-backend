@@ -16,7 +16,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -28,7 +28,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'ativo'
+        'ativo',
     ];
 
     /**
@@ -41,7 +41,7 @@ class User extends Authenticatable
         'remember_token',
         'email_verified_at',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     /**
@@ -76,6 +76,16 @@ class User extends Authenticatable
         return $this->hasMany(Lideranca::class);
     }
 
+    public function atividadeLogs(): HasMany
+    {
+        return $this->hasMany(AtividadeLog::class);
+    }
+
+    public function atividadeSessoes(): HasMany
+    {
+        return $this->hasMany(AtividadeSessao::class);
+    }
+
     public function municipios(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -95,6 +105,4 @@ class User extends Authenticatable
         // Esta relação existe apenas por compatibilidade temporária
         return $this->belongsToMany(Municipio::class, 'user_municipios', 'user_id', 'id_municipio');
     }
-
-
 }

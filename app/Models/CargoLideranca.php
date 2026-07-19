@@ -11,7 +11,7 @@ class CargoLideranca extends Model
     protected $fillable = [
         'classificacao_id',
         'nome',
-        'slug'
+        'slug',
     ];
 
     public function classificacao()
@@ -19,4 +19,3 @@ class CargoLideranca extends Model
         return $this->belongsTo(ClassificacaoLideranca::class, 'classificacao_id');
     }
 }
-

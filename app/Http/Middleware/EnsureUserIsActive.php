@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserIsActive
 {
@@ -17,9 +16,9 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        if ($user && ($user->trashed() || !$user->ativo)) {
+        if ($user && ($user->trashed() || ! $user->ativo)) {
             return response()->json([
-                'message' => 'Conta desativada'
+                'message' => 'Conta desativada',
             ], 403);
         }
 

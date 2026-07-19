@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Acao;
+use App\Models\User;
 
 class AcaoPolicy
 {

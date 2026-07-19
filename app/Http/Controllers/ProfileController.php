@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
@@ -18,8 +18,8 @@ class ProfileController extends Controller
             'message' => 'Perfil atualizado com sucesso',
             'user' => [
                 'name' => $user->name,
-                'email' => $user->email
-            ]
+                'email' => $user->email,
+            ],
         ]);
     }
 
@@ -27,17 +27,17 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'message' => 'Senha atual incorreta',
                 'errors' => [
-                    'current_password' => ['A senha atual está incorreta.']
-                ]
+                    'current_password' => ['A senha atual está incorreta.'],
+                ],
             ], 422);
         }
 
         $user->update([
-            'password' => Hash::make($request->new_password)
+            'password' => Hash::make($request->new_password),
         ]);
 
         return response()->json(['message' => 'Senha alterada com sucesso']);

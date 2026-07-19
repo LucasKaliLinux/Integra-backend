@@ -7,13 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class Municipio extends Model
 {
     protected $table = 'municipios';
+
     protected $primaryKey = 'id_municipio';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     protected $fillable = [
         'nome',
-        'populacao'
+        'populacao',
     ];
 
     public function scopeFilter($query, $filters)
@@ -22,11 +25,11 @@ class Municipio extends Model
             ->when($filters['search'] ?? null, function ($q, $v) {
                 // Detecta qual alias está sendo usado
                 $table = $q->getQuery()->from;
-                
+
                 // Se for "municipios as m", usa "m.nome"
                 // Se for "municipios", usa "municipios.nome"
                 $column = str_contains($table, ' as m') ? 'm.nome' : 'municipios.nome';
-                
+
                 return $q->where($column, 'like', "{$v}%");
             });
     }

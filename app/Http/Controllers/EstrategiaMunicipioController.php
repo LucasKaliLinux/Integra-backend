@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Resources\AcaoMunicipioResource;
 use App\Models\Acao;
 use App\Models\Lideranca;
@@ -17,13 +16,13 @@ class EstrategiaMunicipioController extends Controller
     {
         $user = $request->user();
 
-        $dados = Cache::remember("municipio_detalhes_{$id}_{$user->id}", 1800, function() use ($id, $user) {
-            
+        $dados = Cache::remember("municipio_detalhes_{$id}_{$user->id}", 1800, function () use ($id, $user) {
+
             $municipio = Municipio::where('id_municipio', $id)
                 ->select('id_municipio', 'nome')
                 ->first();
 
-            if (!$municipio) {
+            if (! $municipio) {
                 return null;
             }
 
@@ -87,27 +86,27 @@ class EstrategiaMunicipioController extends Controller
                 'investimento_direcionado' => (float) $investimentoDirecionado,
                 'acoes_concluidas' => $acoesConcluidas,
                 'acoes_nao_concluidas' => $acoesNaoConcluidas,
-                'acoes_total' => $acoesConcluidas + $acoesNaoConcluidas
+                'acoes_total' => $acoesConcluidas + $acoesNaoConcluidas,
             ];
         });
 
-        if (!$dados) {
+        if (! $dados) {
             return response()->json(['message' => 'Município não encontrado.'], 404);
         }
 
         return response()->json($dados);
-    } 
-    
+    }
+
     public function overview(Request $request, $id)
     {
         $user = $request->user();
 
-        $dados = Cache::remember("municipio_overview_{$id}_{$user->id}", 3600, function() use ($id, $user) {
-            
+        $dados = Cache::remember("municipio_overview_{$id}_{$user->id}", 3600, function () use ($id, $user) {
+
             $populacao = Municipio::where('id_municipio', $id)->value('populacao') ?? 0;
 
             $anoMaisRecenteGlobal = DB::table('eleitores')->max('ano');
-            
+
             $totalEleitores = DB::table('eleitores')
                 ->where('id_municipio', $id)
                 ->where('ano', $anoMaisRecenteGlobal)
@@ -123,15 +122,15 @@ class EstrategiaMunicipioController extends Controller
                 ->get();
 
             $potencialEleitoral = 'Sem histórico';
-            
+
             if ($evolucaoVotos->count() >= 2) {
                 $primeiroAno = $evolucaoVotos->first();
                 $ultimoAno = $evolucaoVotos->last();
-                
+
                 $crescimentoPercentual = $primeiroAno->total_votos > 0
                     ? (($ultimoAno->total_votos - $primeiroAno->total_votos) / $primeiroAno->total_votos) * 100
                     : null;
-                
+
                 if ($crescimentoPercentual > 15) {
                     $potencialEleitoral = 'Alto';
                 } elseif ($crescimentoPercentual > 0) {
@@ -167,7 +166,7 @@ class EstrategiaMunicipioController extends Controller
             $acoesConcluidas = Acao::where('deputado_id', $user->deputado_id)
                 ->with([
                     'orgao:id,sigla',
-                    'categoriaInvestimento:id,nome'
+                    'categoriaInvestimento:id,nome',
                 ])
                 ->where('id_municipio', $id)
                 ->where('status_id', $statusConcluida)
@@ -175,7 +174,7 @@ class EstrategiaMunicipioController extends Controller
                 ->orderBy('updated_at', 'DESC')
                 ->limit(5)
                 ->get()
-                ->map(fn($a) => [
+                ->map(fn ($a) => [
                     'id' => $a->id,
                     'titulo' => $a->titulo,
                     'orgao' => $a->orgao?->sigla ?? 'N/A',
@@ -193,7 +192,7 @@ class EstrategiaMunicipioController extends Controller
                 'liderancas' => [
                     'total' => (int) ($liderancas->total ?? 0),
                     'aliados' => (int) ($liderancas->aliados ?? 0),
-                    'oposicao' => (int) ($liderancas->oposicao ?? 0)
+                    'oposicao' => (int) ($liderancas->oposicao ?? 0),
                 ],
                 'acoes_concluidas' => $acoesConcluidas,
             ];
@@ -202,22 +201,21 @@ class EstrategiaMunicipioController extends Controller
         return response()->json($dados);
     }
 
-
     public function eleitoral(Request $request, $id)
     {
         $user = $request->user();
 
-        $dados = Cache::remember("municipio_eleitoral_{$id}_{$user->id}", 3600, function() use ($id, $user) {
-            
+        $dados = Cache::remember("municipio_eleitoral_{$id}_{$user->id}", 3600, function () use ($id, $user) {
+
             return DB::table('votacao as v')
-                ->leftJoin('eleitores as e', function($join) {
+                ->leftJoin('eleitores as e', function ($join) {
                     $join->on('e.id_municipio', '=', 'v.id_municipio')
                         ->on('e.ano', '=', 'v.ano');
                 })
                 ->select([
                     'v.ano',
                     DB::raw('SUM(v.votos) as votos_obtidos'),
-                    DB::raw('MAX(e.total_eleitores) as total_eleitores')
+                    DB::raw('MAX(e.total_eleitores) as total_eleitores'),
                 ])
                 ->where('v.titulo_eleitoral_candidato', $user->deputado->titulo_eleitoral)
                 ->where('v.id_municipio', $id)
@@ -225,18 +223,17 @@ class EstrategiaMunicipioController extends Controller
                 ->groupBy('v.ano')
                 ->orderBy('v.ano', 'ASC')
                 ->get()
-                ->map(function($item) {
+                ->map(function ($item) {
                     return [
                         'ano' => (int) $item->ano,
                         'votos_obtidos' => (int) $item->votos_obtidos,
-                        'total_eleitores' => (int) ($item->total_eleitores ?? 0)
+                        'total_eleitores' => (int) ($item->total_eleitores ?? 0),
                     ];
                 });
         });
 
         return response()->json($dados);
     }
-
 
     public function estrutura(Request $request, $id)
     {
@@ -256,11 +253,11 @@ class EstrategiaMunicipioController extends Controller
             ->get();
 
         $dadosPoliticos = DB::table('liderancas_politicas as lp')
-            ->join('votacao as v', function($join) {
+            ->join('votacao as v', function ($join) {
                 $join->on('v.sequencial_candidato', '=', 'lp.sequencial_candidato')
                     ->on('v.ano', '=', 'lp.ano');
             })
-            ->join('cargos_lideranca as cl', function($join) use ($liderancas) {
+            ->join('cargos_lideranca as cl', function ($join) {
                 $join->on('cl.id', '=', DB::raw(
                     '(SELECT funcao_id FROM liderancas WHERE id = lp.lideranca_id LIMIT 1)'
                 ));
@@ -276,24 +273,24 @@ class EstrategiaMunicipioController extends Controller
             ->get()
             ->keyBy('lideranca_id');
 
-        $lista = $liderancas->map(function($l) use ($dadosPoliticos) {
+        $lista = $liderancas->map(function ($l) use ($dadosPoliticos) {
             $politico = $dadosPoliticos->get($l->id);
 
             return [
-                'id'          => $l->id,
-                'nome'        => $l->nome,
-                'cargo'       => $l->funcao->nome ?? 'Sem cargo',
+                'id' => $l->id,
+                'nome' => $l->nome,
+                'cargo' => $l->funcao->nome ?? 'Sem cargo',
                 'alinhamento' => $l->alinhamento,
                 'is_politico' => $politico !== null,
-                'eleito'      => $politico?->resultado === 'eleito',
-                'votos'       => $politico ? (int) $politico->votos : null,
-                'partido'     => $politico?->sigla_partido ?? null,
-                'cargo_slug'  => $politico?->cargo_slug ?? null,
+                'eleito' => $politico?->resultado === 'eleito',
+                'votos' => $politico ? (int) $politico->votos : null,
+                'partido' => $politico?->sigla_partido ?? null,
+                'cargo_slug' => $politico?->cargo_slug ?? null,
             ];
         });
 
-        $politicosAliados = $lista->filter(fn($l) => $l['is_politico'] && $l['alinhamento'] === 'aliado');
-        $prefeitos = $politicosAliados->filter(fn($l) => $l['cargo_slug'] === 'prefeito');
+        $politicosAliados = $lista->filter(fn ($l) => $l['is_politico'] && $l['alinhamento'] === 'aliado');
+        $prefeitos = $politicosAliados->filter(fn ($l) => $l['cargo_slug'] === 'prefeito');
 
         if ($prefeitos->isNotEmpty()) {
             $votoPrevisao = $prefeitos->sum('votos');
@@ -307,14 +304,13 @@ class EstrategiaMunicipioController extends Controller
         }
 
         $dados = [
-            'liderancas' => $lista->sortByDesc(fn($l) => $l['votos'] ?? 0)->values(),
-            'voto_previsao'      => (int) $votoPrevisao,
+            'liderancas' => $lista->sortByDesc(fn ($l) => $l['votos'] ?? 0)->values(),
+            'voto_previsao' => (int) $votoPrevisao,
             'voto_previsao_label' => $votoPrevisaoLabel,
         ];
 
         return response()->json($dados);
     }
-
 
     public function acoes(Request $request, $id)
     {
@@ -327,7 +323,7 @@ class EstrategiaMunicipioController extends Controller
                 'status:id,nome',
                 'tipoAcao:id,nome',
                 'categoriaInvestimento:id,nome',
-                'orgao:id,nome,sigla'
+                'orgao:id,nome,sigla',
             ])
             ->where('id_municipio', $id)
             ->select([
@@ -338,7 +334,7 @@ class EstrategiaMunicipioController extends Controller
                 'orgao_governo_id',
                 // 'lideranca_solicitante_id',
                 'valor',
-                'status_id'
+                'status_id',
             ])
             ->latest()
             ->paginate($perPage);
@@ -373,27 +369,27 @@ class EstrategiaMunicipioController extends Controller
                 ])
                 ->orderBy('created_at', 'DESC')
                 ->get()
-                ->groupBy(fn($acao) => $acao->created_at->year)
-                ->map(fn($acoesAno, $ano) => [
+                ->groupBy(fn ($acao) => $acao->created_at->year)
+                ->map(fn ($acoesAno, $ano) => [
                     'ano' => $ano,
                     'total_acoes' => $acoesAno->count(),
                     'total_investido' => (float) $acoesAno->sum('valor'),
                     'meses' => $acoesAno
-                        ->groupBy(fn($acao) => $acao->created_at->month)
-                        ->map(fn($acoesMes, $mes) => [
+                        ->groupBy(fn ($acao) => $acao->created_at->month)
+                        ->map(fn ($acoesMes, $mes) => [
                             'mes' => $mes,
                             'mes_nome' => now()->month($mes)->translatedFormat('F'),
                             'total_acoes' => $acoesMes->count(),
                             'total_investido' => (float) $acoesMes->sum('valor'),
-                            'acoes' => $acoesMes->map(fn($acao) => [
-                                'id'         => $acao->id,
-                                'data'       => $acao->created_at->format('d/m/Y'),
-                                'titulo'     => $acao->titulo,
-                                'tipo'       => $acao->tipoAcao->nome ?? '-',
-                                'categoria'  => $acao->categoriaInvestimento->nome ?? '-',
-                                'responsavel'=> $acao->liderancas->first()?->nome ?? $user->name,
-                                'valor'      => (float) $acao->valor,
-                                'status'     => $acao->status->nome ?? '-',
+                            'acoes' => $acoesMes->map(fn ($acao) => [
+                                'id' => $acao->id,
+                                'data' => $acao->created_at->format('d/m/Y'),
+                                'titulo' => $acao->titulo,
+                                'tipo' => $acao->tipoAcao->nome ?? '-',
+                                'categoria' => $acao->categoriaInvestimento->nome ?? '-',
+                                'responsavel' => $acao->liderancas->first()?->nome ?? $user->name,
+                                'valor' => (float) $acao->valor,
+                                'status' => $acao->status->nome ?? '-',
                             ]),
                         ])
                         ->sortKeysDesc()
@@ -405,6 +401,4 @@ class EstrategiaMunicipioController extends Controller
 
         return response()->json($dados);
     }
-
-
 }

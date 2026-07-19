@@ -11,7 +11,7 @@ class OrgaoGoverno extends Model
     protected $fillable = [
         'tipo_orgao_id',
         'nome',
-        'sigla'
+        'sigla',
     ];
 
     public function tipoOrgao()
@@ -24,22 +24,17 @@ class OrgaoGoverno extends Model
         return $this->hasMany(Acao::class, 'orgao_governo_id');
     }
 
-     public function scopeFilter($query, $filters)
+    public function scopeFilter($query, $filters)
     {
         return $query
-            ->when($filters['search'] ?? null, fn($q, $v) =>
-                $q->where(fn($subQ) =>
-                    $subQ->where('nome', 'like', "%{$v}%")
-                         ->orWhere('sigla', 'like', "%{$v}%")
-                )
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where(fn ($subQ) => $subQ->where('nome', 'like', "%{$v}%")
+                ->orWhere('sigla', 'like', "%{$v}%")
             )
-            ->when($filters['tipo_orgao_id'] ?? null, fn($q, $v) =>
-                $q->where('tipo_orgao_id', $v)
             )
-            ->when($filters['esfera_id'] ?? null, fn($q, $v) =>
-                $q->whereHas('tipoOrgao', fn($subQ) =>
-                    $subQ->where('esfera_governo_id', $v)
-                )
+            ->when($filters['tipo_orgao_id'] ?? null, fn ($q, $v) => $q->where('tipo_orgao_id', $v)
+            )
+            ->when($filters['esfera_id'] ?? null, fn ($q, $v) => $q->whereHas('tipoOrgao', fn ($subQ) => $subQ->where('esfera_governo_id', $v)
+            )
             );
     }
 }

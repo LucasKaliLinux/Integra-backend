@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\SuperAdmin;
 
+use App\Http\Controllers\Controller;
 use App\Models\TipoOrgao;
 use Illuminate\Http\Request;
 
@@ -9,7 +10,7 @@ class TipoOrgaoController extends Controller
 {
     /**
      * Lista tipos de órgão filtrados por esfera
-     * 
+     *
      * Query params:
      * - esfera_id: Filtra por esfera de governo
      */

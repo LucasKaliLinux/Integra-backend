@@ -4,16 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Helpers\CacheHelper;
 use App\Helpers\StringHelper;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLiderancaPoliticaRequest;
 use App\Http\Resources\EstrategiaLiderancaResource;
-use App\Models\CargoLideranca;
 use App\Models\ClassificacaoLideranca;
 use App\Models\Lideranca;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EstrategiaLiderancaController extends Controller
 {
@@ -25,9 +24,9 @@ class EstrategiaLiderancaController extends Controller
         $page = $request->input('page', 1);
 
         $cacheKey = "candidatos_municipio_{$id}_page_{$page}_per_{$perPage}";
-        
-        $dados = Cache::remember($cacheKey, 3600, function() use ($id, $perPage, $page) {
-            
+
+        $dados = Cache::remember($cacheKey, 3600, function () use ($id, $perPage, $page) {
+
             $prefeitos = DB::table('votacao as v')
                 ->join('candidaturas as c', 'v.titulo_eleitoral_candidato', '=', 'c.titulo_eleitoral')
                 ->where('v.id_municipio', $id)
@@ -41,7 +40,7 @@ class EstrategiaLiderancaController extends Controller
                     DB::raw('MAX(v.resultado) as resultado'),
                     'v.ano',
                     DB::raw('MAX(c.nome) as nome'),
-                    DB::raw('MAX(c.nome_urna) as nome_urna')
+                    DB::raw('MAX(c.nome_urna) as nome_urna'),
                 ])
                 ->groupBy('v.titulo_eleitoral_candidato', 'v.cargo', 'v.sigla_partido', 'v.ano')
                 ->orderByDesc('votos')
@@ -60,7 +59,7 @@ class EstrategiaLiderancaController extends Controller
                     DB::raw('MAX(v.resultado) as resultado'),
                     'v.ano',
                     DB::raw('MAX(c.nome) as nome'),
-                    DB::raw('MAX(c.nome_urna) as nome_urna')
+                    DB::raw('MAX(c.nome_urna) as nome_urna'),
                 ])
                 ->groupBy('v.titulo_eleitoral_candidato', 'v.cargo', 'v.sigla_partido', 'v.ano')
                 ->orderByDesc('votos')
@@ -68,21 +67,21 @@ class EstrategiaLiderancaController extends Controller
 
             return [
                 'prefeitos' => $prefeitos,
-                'vereadores' => $vereadores
+                'vereadores' => $vereadores,
             ];
         });
 
         return response()->json([
-            'prefeito'  => EstrategiaLiderancaResource::collection($dados['prefeitos']),
+            'prefeito' => EstrategiaLiderancaResource::collection($dados['prefeitos']),
             'vereadores' => [
-                'data'         => EstrategiaLiderancaResource::collection(collect($dados['vereadores']->items())),
+                'data' => EstrategiaLiderancaResource::collection(collect($dados['vereadores']->items())),
                 'current_page' => $dados['vereadores']->currentPage(),
-                'last_page'    => $dados['vereadores']->lastPage(),
-                'per_page'     => $dados['vereadores']->perPage(),
-                'total'        => $dados['vereadores']->total(),
-                'from'         => $dados['vereadores']->firstItem(),
-                'to'           => $dados['vereadores']->lastItem()
-            ]
+                'last_page' => $dados['vereadores']->lastPage(),
+                'per_page' => $dados['vereadores']->perPage(),
+                'total' => $dados['vereadores']->total(),
+                'from' => $dados['vereadores']->firstItem(),
+                'to' => $dados['vereadores']->lastItem(),
+            ],
         ]);
     }
 
@@ -107,17 +106,39 @@ class EstrategiaLiderancaController extends Controller
 
         $user = $request->user();
         $idMunicipio = $request->id_municipio;
-        $aliados = $request->aliados ?? [];
-        $oposicao = $request->oposicao ?? [];
-        
+
+        // Converte para string (segurança extra)
+        $aliados = array_map('strval', $request->aliados ?? []);
+        $oposicao = array_map('strval', $request->oposicao ?? []);
+
         $todosSelecionados = array_merge($aliados, $oposicao);
 
         if (empty($aliados) && empty($oposicao)) {
             return response()->json([
-                'error' => 'Selecione pelo menos um candidato.'
+                'error' => 'Selecione pelo menos um candidato.',
             ], 422);
         }
 
+        // Trava atômica por deputado: evita que dois requests simultâneos do mesmo
+        // deputado (duplo-clique/retry) passem ambos pela checagem de duplicidade
+        // antes do commit e insiram lideranças duplicadas (infla "votos potenciais").
+        $lock = Cache::lock("estrategia_lideranca_store_{$user->deputado_id}", 10);
+
+        if (! $lock->get()) {
+            return response()->json([
+                'error' => 'Já existe um cadastro em andamento. Tente novamente em instantes.',
+            ], 429);
+        }
+
+        try {
+            return $this->processarCadastro($user, $idMunicipio, $aliados, $oposicao, $todosSelecionados, $request);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function processarCadastro($user, $idMunicipio, array $aliados, array $oposicao, array $todosSelecionados, Request $request)
+    {
         DB::beginTransaction();
 
         try {
@@ -126,14 +147,16 @@ class EstrategiaLiderancaController extends Controller
                 ->where('ano', self::ANO_ELEICAO)
                 ->whereIn('cargo', ['prefeito', 'vereador'])
                 ->whereIn('sequencial_candidato', $todosSelecionados)
+                ->distinct()
                 ->pluck('sequencial_candidato')
                 ->toArray();
 
             if (count($idsValidos) !== count($todosSelecionados)) {
                 $idsInvalidos = array_diff($todosSelecionados, $idsValidos);
+
                 return response()->json([
                     'error' => 'IDs inválidos encontrados.',
-                    'ids_invalidos' => array_values($idsInvalidos)
+                    'ids_invalidos' => array_values($idsInvalidos),
                 ], 422);
             }
 
@@ -144,28 +167,31 @@ class EstrategiaLiderancaController extends Controller
                 ->whereIn('v.cargo', ['prefeito', 'vereador'])
                 ->whereIn('v.sequencial_candidato', $todosSelecionados)
                 ->select([
-                    DB::raw('MAX(v.sequencial_candidato) as sequencial_candidato'),
+                    'v.sequencial_candidato',
                     'v.titulo_eleitoral_candidato',
                     'v.cargo',
                     DB::raw('MAX(v.resultado) as resultado'),
                     DB::raw('MAX(c.nome) as nome'),
                     DB::raw('MAX(c.nome_urna) as nome_urna'),
-                    DB::raw('MAX(c.data_nascimento) as data_nascimento')
+                    DB::raw('MAX(c.data_nascimento) as data_nascimento'),
                 ])
-                ->groupBy('v.titulo_eleitoral_candidato', 'v.cargo')
+                ->groupBy('v.sequencial_candidato', 'v.titulo_eleitoral_candidato', 'v.cargo') // ⬅️ CRITICAL
                 ->get();
 
             $sequenciais = $candidatos->pluck('sequencial_candidato')->toArray();
-            
-            $jaExiste = DB::table('liderancas_politicas')
-                ->whereIn('sequencial_candidato', $sequenciais)
-                ->where('ano', self::ANO_ELEICAO)
+
+            $jaExiste = DB::table('liderancas_politicas as lp')
+                ->join('liderancas as l', 'lp.lideranca_id', '=', 'l.id')
+                ->where('l.deputado_id', $user->deputado_id)
+                ->whereIn('lp.sequencial_candidato', $sequenciais)
+                ->where('lp.ano', self::ANO_ELEICAO)
                 ->exists();
 
             if ($jaExiste) {
                 DB::rollBack();
+
                 return response()->json([
-                    'error' => 'Um ou mais candidatos já estão cadastrados como lideranças políticas.'
+                    'error' => 'Um ou mais candidatos já estão cadastrados como lideranças políticas.',
                 ], 422);
             }
 
@@ -173,8 +199,9 @@ class EstrategiaLiderancaController extends Controller
                 return ClassificacaoLideranca::where('slug', 'politica')->first();
             });
 
-            if (!$classificacaoPolitica) {
+            if (! $classificacaoPolitica) {
                 DB::rollBack();
+
                 return response()->json(['error' => 'Classificação "politica" não encontrada.'], 500);
             }
 
@@ -187,6 +214,7 @@ class EstrategiaLiderancaController extends Controller
 
             if (empty($cargosMap['prefeito']) || empty($cargosMap['vereador'])) {
                 DB::rollBack();
+
                 return response()->json(['error' => 'Cargos "prefeito" ou "vereador" não encontrados.'], 500);
             }
 
@@ -196,7 +224,9 @@ class EstrategiaLiderancaController extends Controller
                 $alinhamento = in_array($candidato->sequencial_candidato, $aliados) ? 'aliado' : 'oposicao';
                 $funcaoId = $cargosMap[$candidato->cargo] ?? null;
 
-                if (!$funcaoId) continue;
+                if (! $funcaoId) {
+                    continue;
+                }
 
                 $resultadoMapeado = str_starts_with($candidato->resultado, 'eleito') ? 'eleito' : 'nao_eleito';
 
@@ -239,7 +269,7 @@ class EstrategiaLiderancaController extends Controller
                     'titulo_eleitoral' => $tituloEleitoral,
                     'resultado' => $resultado,
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -250,15 +280,46 @@ class EstrategiaLiderancaController extends Controller
             return response()->json([
                 'message' => 'Lideranças políticas cadastradas com sucesso.',
                 'total_cadastrados' => count($liderancasParaInserir),
-                'aliados' => count(array_filter($liderancasParaInserir, fn($l) => $l['alinhamento'] === 'aliado')),
-                'oposicao' => count(array_filter($liderancasParaInserir, fn($l) => $l['alinhamento'] === 'oposicao'))
+                'aliados' => count(array_filter($liderancasParaInserir, fn ($l) => $l['alinhamento'] === 'aliado')),
+                'oposicao' => count(array_filter($liderancasParaInserir, fn ($l) => $l['alinhamento'] === 'oposicao')),
             ], 201);
 
+        } catch (QueryException $e) {
+            DB::rollBack();
+
+            // Toda violação de integridade é logada (inclusive duplicidade), para não
+            // mascarar erros reais (FK órfã, NOT NULL, etc.) num 422 enganoso.
+            Log::error('Erro ao cadastrar lideranças políticas (QueryException)', [
+                'deputado_id' => $user->deputado_id,
+                'id_municipio' => $idMunicipio,
+                'exception' => $e->getMessage(),
+            ]);
+
+            // Duplicidade real = código de erro do MySQL 1062 (Duplicate entry),
+            // não o SQLSTATE genérico 23000 que cobre qualquer violação de integridade.
+            $violacaoDuplicidade = (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1062)
+                || str_contains($e->getMessage(), 'Duplicate entry');
+
+            if ($violacaoDuplicidade) {
+                return response()->json([
+                    'error' => 'Um ou mais candidatos já estão cadastrados como lideranças políticas.',
+                ], 422);
+            }
+
+            return response()->json([
+                'error' => 'Erro ao cadastrar lideranças políticas. Tente novamente.',
+            ], 500);
         } catch (\Exception $e) {
             DB::rollBack();
+
+            Log::error('Erro ao cadastrar lideranças políticas', [
+                'deputado_id' => $user->deputado_id,
+                'id_municipio' => $idMunicipio,
+                'exception' => $e->getMessage(),
+            ]);
+
             return response()->json([
-                'error' => 'Erro ao cadastrar lideranças políticas.',
-                'message' => $e->getMessage()
+                'error' => 'Erro ao cadastrar lideranças políticas. Tente novamente.',
             ], 500);
         }
     }

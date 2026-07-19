@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Export;
+use App\Models\User;
 
 class ExportPolicy
 {
@@ -12,6 +12,7 @@ class ExportPolicy
         if ($user->hasRole('super_admin')) {
             return true;
         }
+
         return null;
     }
 

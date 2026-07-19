@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'client' => \App\Http\Middleware\EnsureIsClient::class,
+            'super_admin' => \App\Http\Middleware\EnsureIsSuperAdmin::class,
+            'registrar.atividade' => \App\Http\Middleware\RegistrarAtividade::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

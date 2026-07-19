@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Deputado extends Model
 {
@@ -13,11 +13,11 @@ class Deputado extends Model
         'nome',
         'partido',
         'cargo',
-        'ativo'
+        'ativo',
     ];
 
     protected $casts = [
-        'ativo' => 'boolean'
+        'ativo' => 'boolean',
     ];
 
     public function users(): HasMany
@@ -53,5 +53,15 @@ class Deputado extends Model
             'deputado_id',
             'id_municipio'
         )->withPivot('user_id');
+    }
+
+    public function atividadeLogs(): HasMany
+    {
+        return $this->hasMany(AtividadeLog::class);
+    }
+
+    public function atividadeSessoes(): HasMany
+    {
+        return $this->hasMany(AtividadeSessao::class);
     }
 }

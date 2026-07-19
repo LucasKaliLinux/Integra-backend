@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CacheHelper;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLiderancaRequest;
-use App\Http\Requests\UpdateLiderancaPoliticaRequest;
 use App\Http\Requests\UpdateLiderancaRequest;
 use App\Http\Resources\LiderancaResource;
 use App\Models\CargoLideranca;
@@ -14,16 +12,13 @@ use Illuminate\Http\Request;
 
 class LiderancaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $query = Lideranca::where('deputado_id', $request->user()->deputado_id)
             ->with([
                 'municipio:id_municipio,nome',
                 'classificacao:id,nome,slug',
-                'funcao:id,nome,slug'
+                'funcao:id,nome,slug',
             ])
             ->filter($request->all())
             ->latest();
@@ -37,19 +32,16 @@ class LiderancaController extends Controller
         return LiderancaResource::collection($query->paginate($perPage)->withQueryString());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreLiderancaRequest $request)
     {
         $this->authorize('create', Lideranca::class);
 
-        if (!Lideranca::cargoPertenceAClassificacao(
+        if (! Lideranca::cargoPertenceAClassificacao(
             $request->funcao_id,
             $request->classificacao_id
         )) {
             return response()->json([
-                'error' => 'Função não pertence à classificação informada.'
+                'error' => 'Função não pertence à classificação informada.',
             ], 422);
         }
 
@@ -63,16 +55,12 @@ class LiderancaController extends Controller
         return new LiderancaResource($lideranca);
     }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request ,string $id)
+    public function show(Request $request, string $id)
     {
         $lideranca = Lideranca::where('deputado_id', $request->user()->deputado_id)->with([
             'municipio',
             'classificacao',
-            'funcao'
+            'funcao',
         ])->findOrFail($id);
 
         $this->authorize('view', $lideranca);
@@ -80,32 +68,31 @@ class LiderancaController extends Controller
         return new LiderancaResource($lideranca);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateLiderancaRequest $request, $id)
     {
         $lideranca = Lideranca::where('deputado_id', $request->user()->deputado_id)
             ->with('funcao')
             ->findOrFail($id);
+
         $this->authorize('update', $lideranca);
 
         $isPrefeitoOuVereador = in_array($lideranca->funcao?->slug, ['prefeito', 'vereador']);
 
         if ($isPrefeitoOuVereador) {
-            $lideranca->update($request->only(['telefone', 'alinhamento', 'observacao']));
+            // ⬇️ ATUALIZADO: Incluído 'instagram'
+            $lideranca->update($request->only(['telefone', 'instagram', 'alinhamento', 'observacao']));
         } else {
             // Bloqueia tentativa de virar prefeito/vereador
             $novoCargo = CargoLideranca::find($request->funcao_id);
             if ($novoCargo && in_array($novoCargo->slug, ['prefeito', 'vereador'])) {
                 return response()->json([
-                    'error' => 'Não é permitido atribuir cargo de prefeito ou vereador manualmente.'
+                    'error' => 'Não é permitido atribuir cargo de prefeito ou vereador manualmente.',
                 ], 422);
             }
 
-            if (!Lideranca::cargoPertenceAClassificacao($request->funcao_id, $request->classificacao_id)) {
+            if (! Lideranca::cargoPertenceAClassificacao($request->funcao_id, $request->classificacao_id)) {
                 return response()->json([
-                    'error' => 'Função não pertence à classificação informada.'
+                    'error' => 'Função não pertence à classificação informada.',
                 ], 422);
             }
 
@@ -117,10 +104,6 @@ class LiderancaController extends Controller
         return new LiderancaResource($lideranca->fresh());
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Request $request, $id)
     {
         $lideranca = Lideranca::where('deputado_id', $request->user()->deputado_id)->findOrFail($id);

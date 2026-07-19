@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -90,7 +90,7 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        // ========== USER_MUNICIPIOS ========== 
+        // ========== USER_MUNICIPIOS ==========
         // ⬇️ NOVO: Protege também (você estava certo!)
         Schema::table('user_municipios', function (Blueprint $table) {
             $foreignKeys = $this->getForeignKeys('user_municipios');
@@ -196,6 +196,6 @@ return new class extends Migration
             [$table]
         );
 
-        return array_map(fn($fk) => $fk->CONSTRAINT_NAME, $foreignKeys);
+        return array_map(fn ($fk) => $fk->CONSTRAINT_NAME, $foreignKeys);
     }
 };

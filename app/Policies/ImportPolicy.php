@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Import;
+use App\Models\User;
 
 class ImportPolicy
 {
@@ -12,6 +12,7 @@ class ImportPolicy
         if ($user->hasRole('super_admin')) {
             return true;
         }
+
         return null;
     }
 

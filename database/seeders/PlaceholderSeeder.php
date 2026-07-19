@@ -13,19 +13,19 @@ class PlaceholderSeeder extends Seeder
         $orgaoId = DB::table('orgaos_governo')->insertGetId([
             'tipo_orgao_id' => 1, // Qualquer tipo (ex: Ministério)
             'nome' => 'A DEFINIR',
-            'sigla' => 'A DEFINIR'
+            'sigla' => 'A DEFINIR',
         ]);
 
         // 2. Cria categoria placeholder
         $categoriaId = DB::table('categorias_investimento')->insertGetId([
             'nome' => 'A DEFINIR',
-            'slug' => 'a-definir'
+            'slug' => 'a-definir',
         ]);
 
         // 3. Cria tipo de ação placeholder
         $tipoId = DB::table('tipos_acao')->insertGetId([
             'nome' => 'A DEFINIR',
-            'slug' => 'a-definir'
+            'slug' => 'a-definir',
         ]);
 
         $this->command->info('✅ Placeholders criados:');

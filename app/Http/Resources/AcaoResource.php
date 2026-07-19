@@ -23,33 +23,32 @@ class AcaoResource extends JsonResource
             'orgao' => [
                 'id' => $this->orgao->id,
                 'nome' => $this->orgao->nome,
-                'sigla' => $this->orgao->sigla
+                'sigla' => $this->orgao->sigla,
             ],
             'categoria' => [
                 'id' => $this->categoriaInvestimento->id,
-                'nome' => $this->categoriaInvestimento->nome
+                'nome' => $this->categoriaInvestimento->nome,
             ],
             'tipo' => [
                 'id' => $this->tipoAcao->id,
-                'nome' => $this->tipoAcao->nome
+                'nome' => $this->tipoAcao->nome,
             ],
             'municipio' => [
                 'id' => $this->municipio->id_municipio,
-                'nome' => $this->municipio->nome
+                'nome' => $this->municipio->nome,
             ],
-            'liderancas' => $this->liderancas->map(fn($lideranca) => [
+            'liderancas' => $this->liderancas->map(fn ($lideranca) => [
                 'id' => $lideranca->id,
-                'nome' => $lideranca->nome
+                'nome' => $lideranca->nome,
             ]),
             'valor' => (float) $this->valor,
             'ano' => $this->ano,
             'status' => [
                 'id' => $this->status->id,
-                'nome' => $this->status->nome
+                'nome' => $this->status->nome,
             ],
             'observacao' => $this->observacao,
             'instrumento' => InstrumentoHelper::buildFromPath($this->instrumento_path, $this->updated_at),
         ];
     }
 }
-

@@ -8,7 +8,7 @@ class InstrumentoHelper
 {
     public static function buildFromPath(?string $path, $updatedAt): array
     {
-        if (!$path || !Storage::disk('public')->exists($path)) {
+        if (! $path || ! Storage::disk('public')->exists($path)) {
             return [
                 'exists' => false,
                 'filename' => null,
@@ -24,8 +24,8 @@ class InstrumentoHelper
         $extension = strtoupper(pathinfo($path, PATHINFO_EXTENSION));
         $sizeInBytes = filesize($fullPath);
         $sizeFormatted = $sizeInBytes >= 1048576
-            ? round($sizeInBytes / 1048576, 2) . ' MB'
-            : round($sizeInBytes / 1024, 2) . ' KB';
+            ? round($sizeInBytes / 1048576, 2).' MB'
+            : round($sizeInBytes / 1024, 2).' KB';
 
         return [
             'exists' => true,

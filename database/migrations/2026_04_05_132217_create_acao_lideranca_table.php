@@ -16,7 +16,7 @@ return new class extends Migration
 
             // Previne duplicatas
             $table->unique(['acao_id', 'lideranca_id']);
-            
+
             // Índices de performance
             $table->index('acao_id');
             $table->index('lideranca_id');

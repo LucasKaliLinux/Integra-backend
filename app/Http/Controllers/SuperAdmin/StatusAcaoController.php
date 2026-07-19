@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\SuperAdmin;
 
+use App\Http\Controllers\Controller;
 use App\Models\StatusAcao;
-use Illuminate\Http\Request;
 
 class StatusAcaoController extends Controller
 {

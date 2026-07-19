@@ -22,9 +22,9 @@ class StoreUserRequest extends FormRequest
                 Password::min(8)
                     ->mixedCase()
                     ->numbers()
-                    ->symbols()
+                    ->symbols(),
             ],
-            'role' => 'required|in:admin,manager,cabinet'
+            'role' => 'required|in:admin,manager,cabinet',
         ];
     }
 
@@ -34,17 +34,17 @@ class StoreUserRequest extends FormRequest
             'name.required' => 'O nome é obrigatório.',
             'name.string' => 'O nome deve ser um texto válido.',
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
-            
+
             'email.required' => 'O e-mail é obrigatório.',
             'email.email' => 'O e-mail deve ser um endereço válido.',
             'email.unique' => 'Este e-mail já está em uso.',
-            
+
             'password.required' => 'A senha é obrigatória.',
             'password.min' => 'A senha deve ter no mínimo :min caracteres.',
             'password.mixed' => 'A senha deve conter letras maiúsculas e minúsculas.',
             'password.numbers' => 'A senha deve conter pelo menos um número.',
             'password.symbols' => 'A senha deve conter pelo menos um símbolo.',
-            
+
             'role.required' => 'O cargo é obrigatório.',
             'role.in' => 'O cargo selecionado é inválido. Escolha entre: Administrador, Assessor Político ou Assessor de Gabinete.',
         ];
@@ -56,7 +56,7 @@ class StoreUserRequest extends FormRequest
             'name' => 'nome',
             'email' => 'e-mail',
             'password' => 'senha',
-            'role' => 'cargo'
+            'role' => 'cargo',
         ];
     }
 }

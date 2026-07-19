@@ -17,7 +17,7 @@ class LiderancaSeeder extends Seeder
                 'Vice-prefeito',
                 'Ex-prefeito',
                 'Vereador',
-                'Ex-vereador'
+                'Ex-vereador',
             ],
 
             'Lideranças Comunitárias e Sociais' => [
@@ -65,7 +65,6 @@ class LiderancaSeeder extends Seeder
 
         ];
 
-
         foreach ($classificacoes as $nomeClassificacao => $cargos) {
 
             $slugClassificacao = Str::slug($nomeClassificacao, '_');
@@ -87,7 +86,7 @@ class LiderancaSeeder extends Seeder
                     ->updateOrInsert(
                         [
                             'classificacao_id' => $classificacao->id,
-                            'slug' => $slugCargo
+                            'slug' => $slugCargo,
                         ],
                         ['nome' => $cargo]
                     );

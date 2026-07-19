@@ -25,7 +25,7 @@ return new class extends Migration
                 ->on('liderancas')
                 ->onDelete('cascade');
 
-            $table->unique(['sequencial_candidato','ano']);
+            $table->unique(['sequencial_candidato', 'ano']);
         });
     }
 

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\EsferaGoverno;
+use Illuminate\Database\Seeder;
 
 class EsferaGovernoSeeder extends Seeder
 {

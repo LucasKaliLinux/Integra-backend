@@ -21,12 +21,12 @@ class Acao extends Model
         'instrumento_path',
         'valor',
         'ano',
-        'observacao'
+        'observacao',
     ];
 
     protected $casts = [
         'valor' => 'decimal:2',
-        'ano' => 'integer'
+        'ano' => 'integer',
     ];
 
     // Relationships
@@ -65,7 +65,7 @@ class Acao extends Model
         return $this->belongsTo(StatusAcao::class, 'status_id');
     }
 
-     public function liderancas()
+    public function liderancas()
     {
         return $this->belongsToMany(Lideranca::class, 'acao_lideranca')
             ->withTimestamps();
@@ -80,19 +80,19 @@ class Acao extends Model
     {
         return $query->where('deputado_id', $deputadoId);
     }
-    
+
     /**
-    * Scope de filtros
-    */
+     * Scope de filtros
+     */
     public function scopeFilter($query, array $filters)
     {
         // Município
-        if (!empty($filters['municipio'])) {
+        if (! empty($filters['municipio'])) {
             $query->where('acoes.id_municipio', $filters['municipio']);
         }
 
         // ⬇️ MUDANÇA: Status (aceita array ou valor único)
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             if (is_array($filters['status'])) {
                 // Múltiplos status: [1, 3, 5]
                 $query->whereIn('acoes.status_id', $filters['status']);
@@ -103,65 +103,65 @@ class Acao extends Model
         }
 
         // Ano específico
-        if (!empty($filters['ano'])) {
+        if (! empty($filters['ano'])) {
             $query->where('acoes.ano', $filters['ano']);
         }
 
         // Ano mínimo
-        if (!empty($filters['ano_min'])) {
+        if (! empty($filters['ano_min'])) {
             $query->where('acoes.ano', '>=', $filters['ano_min']);
         }
 
         // Ano máximo
-        if (!empty($filters['ano_max'])) {
+        if (! empty($filters['ano_max'])) {
             $query->where('acoes.ano', '<=', $filters['ano_max']);
         }
 
         // Valor mínimo
-        if (!empty($filters['valor_min'])) {
+        if (! empty($filters['valor_min'])) {
             $query->where('acoes.valor', '>=', $filters['valor_min']);
         }
 
         // Valor máximo
-        if (!empty($filters['valor_max'])) {
+        if (! empty($filters['valor_max'])) {
             $query->where('acoes.valor', '<=', $filters['valor_max']);
         }
 
         // Órgão
-        if (!empty($filters['orgao'])) {
+        if (! empty($filters['orgao'])) {
             $query->where('acoes.orgao_governo_id', $filters['orgao']);
         }
 
         // Categoria
-        if (!empty($filters['categoria'])) {
+        if (! empty($filters['categoria'])) {
             $query->where('acoes.categoria_investimento_id', $filters['categoria']);
         }
 
         // Tipo de ação
-        if (!empty($filters['tipo_acao'])) {
+        if (! empty($filters['tipo_acao'])) {
             $query->where('acoes.tipo_acao_id', $filters['tipo_acao']);
         }
 
         // Esfera (via relationship)
-        if (!empty($filters['esfera'])) {
-            $query->whereHas('orgao.tipoOrgao', function($q) use ($filters) {
+        if (! empty($filters['esfera'])) {
+            $query->whereHas('orgao.tipoOrgao', function ($q) use ($filters) {
                 $q->where('esfera_governo_id', $filters['esfera']);
             });
         }
 
         // Tipo de órgão (via relationship)
-        if (!empty($filters['tipo_orgao'])) {
-            $query->whereHas('orgao', function($q) use ($filters) {
+        if (! empty($filters['tipo_orgao'])) {
+            $query->whereHas('orgao', function ($q) use ($filters) {
                 $q->where('tipo_orgao_id', $filters['tipo_orgao']);
             });
         }
 
         // Busca textual (título ou número SEI)
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('acoes.titulo', 'like', "%{$search}%")
-                ->orWhere('acoes.numero_sei', 'like', "%{$search}%");
+                    ->orWhere('acoes.numero_sei', 'like', "%{$search}%");
             });
         }
 
@@ -174,7 +174,7 @@ class Acao extends Model
         $sortOrder = strtolower($sortOrder) === 'desc' ? 'desc' : 'asc';
 
         // Se não passou sortBy ou é inválido, usa padrão (ID = ordem de inserção)
-        if (!$sortBy) {
+        if (! $sortBy) {
             return $query->orderBy('id', 'desc'); // Padrão: mais recentes primeiro
         }
 
@@ -182,7 +182,7 @@ class Acao extends Model
         $directSorts = [
             'titulo' => 'titulo',
             'valor' => 'valor',
-            'ano' => 'ano'
+            'ano' => 'ano',
         ];
 
         if (isset($directSorts[$sortBy])) {

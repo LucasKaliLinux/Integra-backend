@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\TipoOrgao;
 use App\Models\OrgaoGoverno;
+use App\Models\TipoOrgao;
+use Illuminate\Database\Seeder;
 
 class addNewOrgaoSeeder extends Seeder
 {

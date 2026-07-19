@@ -16,13 +16,13 @@ class Export extends Model
         'status',
         'erro',
         'started_at',
-        'completed_at'
+        'completed_at',
     ];
 
     protected $casts = [
         'filtros' => 'array',
         'started_at' => 'datetime',
-        'completed_at' => 'datetime'
+        'completed_at' => 'datetime',
     ];
 
     public function deputado()
@@ -39,7 +39,7 @@ class Export extends Model
     {
         $this->update([
             'status' => 'processing',
-            'started_at' => now()
+            'started_at' => now(),
         ]);
     }
 
@@ -47,7 +47,7 @@ class Export extends Model
     {
         $this->update([
             'status' => 'completed',
-            'completed_at' => now()
+            'completed_at' => now(),
         ]);
     }
 
@@ -56,7 +56,7 @@ class Export extends Model
         $this->update([
             'status' => 'failed',
             'erro' => $erro,
-            'completed_at' => now()
+            'completed_at' => now(),
         ]);
     }
 

@@ -4,10 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Helpers\CacheHelper;
 use App\Helpers\InstrumentoHelper;
-use App\Http\Resources\AcaoResource;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAcaoRequest;
 use App\Http\Requests\UpdateAcaoRequest;
+use App\Http\Resources\AcaoResource;
 use App\Models\Acao;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +28,7 @@ class AcaoController extends Controller
                 'valor',
                 'ano',
                 'observacao',
-                'instrumento_path'
+                'instrumento_path',
             ])
             ->with($this->listRelations())
             ->filter($request->all())
@@ -130,7 +129,7 @@ class AcaoController extends Controller
         $this->authorize('update', $acao);
 
         $extension = $request->file('instrumento')->extension();
-        $safeFilename = Str::uuid() . '_' . time() . '.' . $extension;
+        $safeFilename = Str::uuid().'_'.time().'.'.$extension;
 
         DB::beginTransaction();
 
@@ -143,7 +142,7 @@ class AcaoController extends Controller
 
             return response()->json([
                 'message' => 'Instrumento enviado com sucesso.',
-                'instrumento' => InstrumentoHelper::buildFromPath($acao->fresh()->instrumento_path, $acao->fresh()->updated_at)
+                'instrumento' => InstrumentoHelper::buildFromPath($acao->fresh()->instrumento_path, $acao->fresh()->updated_at),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -151,7 +150,7 @@ class AcaoController extends Controller
 
             return response()->json([
                 'message' => 'Erro ao enviar instrumento.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -163,7 +162,7 @@ class AcaoController extends Controller
             ->findOrFail($id);
         $this->authorize('update', $acao);
 
-        if (!$acao->instrumento_path) {
+        if (! $acao->instrumento_path) {
             return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
         }
 
@@ -180,7 +179,7 @@ class AcaoController extends Controller
 
             return response()->json([
                 'message' => 'Erro ao remover instrumento.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -190,15 +189,16 @@ class AcaoController extends Controller
         $acao = $this->fetchAcao($request, $id);
         $this->authorize('view', $acao);
 
-        if (!$acao->instrumento_path) {
+        if (! $acao->instrumento_path) {
             return response()->json(['message' => 'Nenhum instrumento anexado.'], 404);
         }
 
         $fullPath = Storage::disk('public')->path($acao->instrumento_path);
         $basePath = Storage::disk('public')->path('instrumentos');
 
-        if (!Storage::disk('public')->exists($acao->instrumento_path)) {
+        if (! Storage::disk('public')->exists($acao->instrumento_path)) {
             $acao->update(['instrumento_path' => null]);
+
             return response()->json(['message' => 'Arquivo não encontrado.'], 404);
         }
 
@@ -207,12 +207,12 @@ class AcaoController extends Controller
         }
 
         $extension = pathinfo($acao->instrumento_path, PATHINFO_EXTENSION);
-        $safeFilename = 'instrumento_acao_' . $acao->id . '_' . date('Ymd') . '.' . $extension;
+        $safeFilename = 'instrumento_acao_'.$acao->id.'_'.date('Ymd').'.'.$extension;
         $mime = Storage::disk('public')->mimeType($acao->instrumento_path);
 
         return response()->download($fullPath, $safeFilename, [
             'Content-Type' => $mime,
-            'Content-Disposition' => 'attachment; filename="' . $safeFilename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$safeFilename.'"',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -229,7 +229,7 @@ class AcaoController extends Controller
             'orgao.tipoOrgao.esferaGoverno',
             'orgao:id,tipo_orgao_id,nome,sigla',
             'categoriaInvestimento:id,nome',
-            'status:id,nome,slug'
+            'status:id,nome,slug',
         ];
     }
 
@@ -242,7 +242,7 @@ class AcaoController extends Controller
             'categoriaInvestimento:id,nome',
             'tipoAcao:id,nome',
             'status:id,nome',
-            'liderancas:id,nome'
+            'liderancas:id,nome',
         ];
     }
 
@@ -270,7 +270,6 @@ class AcaoController extends Controller
             ->findOrFail($id);
     }
 
-
     private function validateInstrumento(Request $request): void
     {
         $request->validate([
@@ -288,7 +287,7 @@ class AcaoController extends Controller
                         'image/png',
                     ];
 
-                    if (!in_array($value->getMimeType(), $allowedMimes)) {
+                    if (! in_array($value->getMimeType(), $allowedMimes)) {
                         $fail('O tipo de arquivo não é permitido.');
                     }
 
@@ -296,11 +295,11 @@ class AcaoController extends Controller
                     $realMime = finfo_file($finfo, $value->getRealPath());
                     finfo_close($finfo);
 
-                    if (!in_array($realMime, $allowedMimes)) {
+                    if (! in_array($realMime, $allowedMimes)) {
                         $fail('O arquivo possui conteúdo inválido.');
                     }
-                }
-            ]
+                },
+            ],
         ], [
             'instrumento.required' => 'Você precisa enviar um arquivo.',
             'instrumento.file' => 'O arquivo enviado é inválido.',

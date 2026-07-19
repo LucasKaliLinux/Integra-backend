@@ -11,7 +11,7 @@ class TipoOrgao extends Model
     protected $fillable = [
         'esfera_governo_id',
         'nome',
-        'slug'
+        'slug',
     ];
 
     public function esferaGoverno()

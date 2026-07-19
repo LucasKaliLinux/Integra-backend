@@ -6,13 +6,14 @@ use App\Models\Acao;
 use App\Models\Export;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PdfExportService
 {
     private Export $export;
+
     private User $user;
+
     private array $filtros;
 
     public function __construct(Export $export, User $user, array $filtros)
@@ -40,9 +41,9 @@ class PdfExportService
 
             // Salva o arquivo
             $filePath = $this->export->getDownloadPath();
-            
+
             // Cria diretório se não existir
-            if (!file_exists(storage_path('app/exports'))) {
+            if (! file_exists(storage_path('app/exports'))) {
                 mkdir(storage_path('app/exports'), 0755, true);
             }
 
@@ -54,7 +55,7 @@ class PdfExportService
             Log::error('Erro ao gerar PDF de ações', [
                 'export_id' => $this->export->id,
                 'erro' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             $this->export->markAsFailed($e->getMessage());
@@ -71,7 +72,7 @@ class PdfExportService
                 'categoriaInvestimento:id,nome',
                 'tipoAcao:id,nome',
                 'status:id,nome,slug',
-                'liderancas:id,nome'
+                'liderancas:id,nome',
             ])
             ->select([
                 'id',
@@ -85,12 +86,12 @@ class PdfExportService
                 // 'lideranca_solicitante_id',
                 'valor',
                 'ano',
-                'observacao'
+                'observacao',
             ])
             ->filter($this->filtros);
 
         // Aplica ordenação se tiver
-        if (!empty($this->filtros['sort_by'])) {
+        if (! empty($this->filtros['sort_by'])) {
             $query->sort($this->filtros['sort_by'], $this->filtros['sort_order'] ?? 'asc');
         }
 
@@ -100,7 +101,7 @@ class PdfExportService
 
     private function prepareData($acoes): array
     {
-        $acoesFormatadas = $acoes->map(function($acao) {
+        $acoesFormatadas = $acoes->map(function ($acao) {
             return [
                 'governo' => $acao->orgao->tipoOrgao->esferaGoverno->nome ?? '-',
                 'titulo' => $acao->titulo,
@@ -110,11 +111,19 @@ class PdfExportService
                 'valor' => (float) $acao->valor,
                 'ano' => $acao->ano,
                 'status' => $acao->status->nome ?? '-',
-                'status_slug' => $acao->status->slug ?? 'solicitado', // ⬅️ NOVO
+                'status_slug' => $acao->status->slug ?? 'solicitado',
                 'tipo' => $acao->tipoAcao->nome ?? '-',
-                'lideranca' => $acao->liderancas->first()?->nome ?? $this->user->name,
+
+                // ⬇️ NOVO: Array de lideranças
+                'liderancas' => $acao->liderancas->map(fn ($l) => $l->nome)->toArray(),
+
+                // ⬇️ NOVO: String formatada (fallback)
+                'liderancas_texto' => $acao->liderancas->isNotEmpty()
+                    ? $acao->liderancas->pluck('nome')->join(', ')
+                    : $this->user->name,
+
                 'numero_sei' => $acao->numero_sei,
-                'observacao' => $acao->observacao
+                'observacao' => $acao->observacao,
             ];
         })->toArray();
 
@@ -123,7 +132,7 @@ class PdfExportService
             'total' => count($acoesFormatadas),
             'filtros' => $this->formatFiltros(),
             'dataGeracao' => now()->format('d/m/Y H:i'),
-            'usuario' => $this->user->name
+            'usuario' => $this->user->name,
         ];
     }
 
@@ -140,7 +149,7 @@ class PdfExportService
             'orgao' => 'Órgão',
             'categoria' => 'Categoria',
             'esfera' => 'Esfera',
-            'search' => 'Busca'
+            'search' => 'Busca',
         ];
 
         foreach ($this->filtros as $key => $value) {
@@ -148,7 +157,7 @@ class PdfExportService
                 continue; // Ignora parâmetros de paginação/ordenação
             }
 
-            if (!empty($value)) {
+            if (! empty($value)) {
                 $formatted[$labels[$key] ?? $key] = $value;
             }
         }

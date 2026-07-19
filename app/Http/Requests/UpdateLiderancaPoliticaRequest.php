@@ -19,11 +19,11 @@ class UpdateLiderancaPoliticaRequest extends FormRequest
             // - classificacao_id
             // - funcao_id
             // - nome
-            
+
             // Apenas campos editáveis para políticos:
             'telefone' => 'nullable|string|max:20',
             'alinhamento' => 'required|in:aliado,oposicao',
-            'observacao' => 'nullable|string'
+            'observacao' => 'nullable|string',
         ];
     }
 }

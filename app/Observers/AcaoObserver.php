@@ -16,7 +16,7 @@ class AcaoObserver
             'acao_id' => $acao->id,
             'status_id' => $acao->status_id,
             'user_id' => auth()->id() ?? $acao->user_id,  // Quem criou
-            'observacao' => 'Ação criada'
+            'observacao' => 'Ação criada',
         ]);
     }
 
@@ -31,7 +31,7 @@ class AcaoObserver
                 'acao_id' => $acao->id,
                 'status_id' => $acao->getOriginal('status_id'), // Status ANTERIOR
                 'user_id' => auth()->id() ?? $acao->user_id,    // Quem alterou
-                'observacao' => request('observacao_mudanca') ?? 'Status alterado'
+                'observacao' => request('observacao_mudanca') ?? 'Status alterado',
             ]);
         }
     }
@@ -47,7 +47,7 @@ class AcaoObserver
                 'acao_id' => $acao->id,
                 'status_id' => $acao->status_id, // Status NOVO
                 'user_id' => auth()->id() ?? $acao->user_id,
-                'observacao' => request('observacao_mudanca') ?? 'Status alterado para ' . $acao->status->nome
+                'observacao' => request('observacao_mudanca') ?? 'Status alterado para '.$acao->status->nome,
             ]);
         }
     }

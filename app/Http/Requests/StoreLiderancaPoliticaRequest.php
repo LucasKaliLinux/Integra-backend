@@ -15,10 +15,10 @@ class StoreLiderancaPoliticaRequest extends FormRequest
     {
         return [
             'id_municipio' => 'required|integer|exists:municipios,id_municipio',
-            'aliados'      => 'nullable|array',
-            'aliados.*'    => 'integer',
-            'oposicao'     => 'nullable|array',
-            'oposicao.*'   => 'integer',
+            'aliados' => 'nullable|array',
+            'aliados.*' => 'integer',
+            'oposicao' => 'nullable|array',
+            'oposicao.*' => 'integer',
         ];
     }
 
@@ -26,9 +26,11 @@ class StoreLiderancaPoliticaRequest extends FormRequest
     {
         return [
             'id_municipio.required' => 'O município é obrigatório.',
-            'id_municipio.exists' => 'Município não encontrado.',
-            'aliados.required' => 'Selecione ao menos um aliado.',
-            'aliados.min' => 'Selecione ao menos um aliado.',
+            'id_municipio.exists' => 'Município inválido.',
+            'aliados.array' => 'O campo aliados deve ser um array.',
+            'oposicao.array' => 'O campo oposição deve ser um array.',
+            'aliados.*.numeric' => 'ID de candidato aliado inválido.',
+            'oposicao.*.numeric' => 'ID de candidato oposição inválido.',
         ];
     }
 }

@@ -18,8 +18,8 @@ class ImportAcaoRequest extends FormRequest
                 'required',
                 'file',
                 'mimes:xlsx,xls',
-                'max:51200' // 50MB
-            ]
+                'max:51200', // 50MB
+            ],
         ];
     }
 
@@ -28,7 +28,7 @@ class ImportAcaoRequest extends FormRequest
         return [
             'file.required' => 'O arquivo é obrigatório.',
             'file.mimes' => 'O arquivo deve ser do tipo Excel (.xlsx ou .xls).',
-            'file.max' => 'O arquivo não pode ser maior que 50MB.'
+            'file.max' => 'O arquivo não pode ser maior que 50MB.',
         ];
     }
 }

@@ -22,8 +22,8 @@ class UpdatePasswordRequest extends FormRequest
                 Password::min(8)
                     ->mixedCase()
                     ->numbers()
-                    ->symbols()
-            ]
+                    ->symbols(),
+            ],
         ];
     }
 
@@ -43,7 +43,7 @@ class UpdatePasswordRequest extends FormRequest
     {
         return [
             'current_password' => 'senha atual',
-            'new_password' => 'nova senha'
+            'new_password' => 'nova senha',
         ];
     }
 }

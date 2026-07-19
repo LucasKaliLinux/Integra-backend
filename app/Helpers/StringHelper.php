@@ -32,7 +32,7 @@ class StringHelper
             // Primeira palavra sempre maiúscula, independente de ser conectivo
             if ($indice === 0) {
                 return mb_strtoupper(mb_substr($palavra, 0, 1, 'UTF-8'), 'UTF-8')
-                    . mb_substr($palavra, 1, null, 'UTF-8');
+                    .mb_substr($palavra, 1, null, 'UTF-8');
             }
 
             // Conectivos e preposições ficam minúsculos
@@ -42,7 +42,7 @@ class StringHelper
 
             // Demais palavras com inicial maiúscula
             return mb_strtoupper(mb_substr($palavra, 0, 1, 'UTF-8'), 'UTF-8')
-                . mb_substr($palavra, 1, null, 'UTF-8');
+                .mb_substr($palavra, 1, null, 'UTF-8');
 
         }, $palavras, array_keys($palavras));
 

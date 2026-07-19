@@ -97,21 +97,30 @@ class NotificacaoController extends Controller
      */
     public function show(int $id)
     {
-        $notificacao = Notificacao::with(['leituras', 'deputados'])->findOrFail($id);
+        $notificacao = Notificacao::with([
+            'leituras.deputado:id,nome',
+            'deputados',
+        ])->findOrFail($id);
+
+        $formatarDeputado = fn ($user) => $user->deputado ? [
+            'id' => $user->deputado->id,
+            'nome' => $user->deputado->nome,
+        ] : null;
 
         $visualizaram = $notificacao->leituras->map(fn ($user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'lida_em' => $user->pivot->lida_em,
+            'deputado' => $formatarDeputado($user),
         ]);
 
         // Usuários que DEVERIAM ver mas NÃO leram
         if ($notificacao->audiencia === 'todos') {
-            $todosUsers = User::whereNotNull('deputado_id')->get();
+            $todosUsers = User::whereNotNull('deputado_id')->with('deputado:id,nome')->get();
         } else {
             $deputadosIds = $notificacao->deputados->pluck('id');
-            $todosUsers = User::whereIn('deputado_id', $deputadosIds)->get();
+            $todosUsers = User::whereIn('deputado_id', $deputadosIds)->with('deputado:id,nome')->get();
         }
 
         $naoVisualizaram = $todosUsers->filter(function ($user) use ($visualizaram) {
@@ -120,6 +129,7 @@ class NotificacaoController extends Controller
             'id' => $u->id,
             'name' => $u->name,
             'email' => $u->email,
+            'deputado' => $formatarDeputado($u),
         ])->values();
 
         return response()->json([

@@ -120,23 +120,35 @@
             font-size: 7pt;
         }
 
-        /* ⬇️ NOVO: Linha da ação (par/ímpar) */
-        tbody tr.acao-row:nth-child(4n+1) {
+        /* Linhas das ações (zebrado) */
+        tbody tr.acao-row:nth-child(6n+1) {
             background: #ffffff;
         }
 
-        tbody tr.acao-row:nth-child(4n+3) {
+        tbody tr.acao-row:nth-child(6n+4) {
             background: #f9fafb;
         }
 
-        /* ⬇️ NOVO: Linha de observação (logo abaixo da ação) */
+        /* ⬇️ NOVO: Linha de lideranças */
+        tr.liderancas-row {
+            background: #eff6ff !important; /* Azul bem claro */
+        }
+
+        tr.liderancas-row td {
+            padding: 6px 12px;
+            border-left: 3px solid #3b82f6; /* Borda azul */
+            color: #1e40af;
+            font-size: 7pt;
+        }
+
+        /* Linha de observação */
         tr.observacao-row {
-            background: #fef3c7 !important; /* Fundo amarelo claro */
+            background: #fef3c7 !important;
         }
 
         tr.observacao-row td {
             padding: 8px 12px;
-            border-left: 3px solid #f59e0b; /* Borda laranja */
+            border-left: 3px solid #f59e0b;
             font-style: italic;
             color: #92400e;
             font-size: 7pt;
@@ -208,10 +220,24 @@
             text-overflow: ellipsis;
         }
 
-        /* ⬇️ NOVO: Label da observação */
+        /* ⬇️ NOVO: Labels */
+        .liderancas-label {
+            font-weight: 600;
+            color: #1e40af;
+        }
+
         .obs-label {
             font-weight: 600;
             color: #92400e;
+        }
+
+        /* ⬇️ NOVO: Ícones (símbolos Unicode) */
+        .icon-users::before {
+            content: "👥 ";
+        }
+
+        .icon-note::before {
+            content: "📝 ";
         }
     </style>
 </head>
@@ -239,17 +265,16 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 5%;">Gov.</th>
-                    <th style="width: 24%;">Título</th>
-                    <th style="width: 5%;">Órgão</th>
-                    <th style="width: 10%;">Categoria</th>
-                    <th style="width: 10%;">Município</th>
-                    <th style="width: 8%;" class="text-right">Valor (R$)</th>
+                    <th style="width: 6%;">Gov.</th>
+                    <th style="width: 26%;">Título</th>
+                    <th style="width: 6%;">Órgão</th>
+                    <th style="width: 11%;">Categoria</th>
+                    <th style="width: 11%;">Município</th>
+                    <th style="width: 9%;" class="text-right">Valor (R$)</th>
                     <th style="width: 4%;">Ano</th>
-                    <th style="width: 8%;">Status</th>
-                    <th style="width: 6%;">Tipo</th>
-                    <th style="width: 8%;">Liderança</th>
-                    <th style="width: 7%;">N° SEI</th>
+                    <th style="width: 9%;">Status</th>
+                    <th style="width: 7%;">Tipo</th>
+                    <th style="width: 8%;">N° SEI</th>
                 </tr>
             </thead>
             <tbody>
@@ -273,15 +298,25 @@
                             </span>
                         </td>
                         <td>{{ $acao['tipo'] }}</td>
-                        <td>{{ $acao['lideranca'] }}</td>
                         <td>{{ $acao['numero_sei'] ?: '-' }}</td>
                     </tr>
 
-                    {{-- ⬇️ NOVO: Linha de observação (só aparece se tiver) --}}
+                    {{-- ⬇️ NOVO: Linha de lideranças (só aparece se tiver) --}}
+                    @if(!empty($acao['liderancas']) && count($acao['liderancas']) > 0)
+                    <tr class="liderancas-row">
+                        <td colspan="10">
+                            <span class="liderancas-label icon-users">Lideranças:</span> 
+                            {{ implode(', ', $acao['liderancas']) }}
+                        </td>
+                    </tr>
+                    @endif
+
+                    {{-- ⬇️ Linha de observação (só aparece se tiver) --}}
                     @if(!empty($acao['observacao']))
                     <tr class="observacao-row">
-                        <td colspan="11">
-                            <span class="obs-label">Observação:</span> {{ $acao['observacao'] }}
+                        <td colspan="10">
+                            <span class="obs-label icon-note">Observação:</span> 
+                            {{ $acao['observacao'] }}
                         </td>
                     </tr>
                     @endif

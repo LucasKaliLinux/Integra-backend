@@ -18,13 +18,13 @@ class Import extends Model
         'status',
         'errors',
         'started_at',
-        'completed_at'
+        'completed_at',
     ];
 
     protected $casts = [
         'errors' => 'array',
         'started_at' => 'datetime',
-        'completed_at' => 'datetime'
+        'completed_at' => 'datetime',
     ];
 
     public function deputado()
@@ -50,7 +50,7 @@ class Import extends Model
     {
         $this->update([
             'status' => 'processing',
-            'started_at' => now()
+            'started_at' => now(),
         ]);
     }
 
@@ -58,7 +58,7 @@ class Import extends Model
     {
         $this->update([
             'status' => 'completed',
-            'completed_at' => now()
+            'completed_at' => now(),
         ]);
     }
 
@@ -67,7 +67,7 @@ class Import extends Model
         $this->update([
             'status' => 'failed',
             'errors' => [['linha' => 0, 'erro' => $erro]],
-            'completed_at' => now()
+            'completed_at' => now(),
         ]);
     }
 

@@ -22,7 +22,7 @@ class AcaoMunicipioResource extends JsonResource
             }, []),
             'responsavel' => $this->whenLoaded('liderancas', fn () => $this->liderancas->first()?->nome ?? $request->user()->name, $request->user()->name),
             'valor' => (float) $this->valor,
-            'status' => $this->status?->nome ?? 'N/A' // ⬅️ MUDOU
+            'status' => $this->status?->nome ?? 'N/A', // ⬅️ MUDOU
         ];
     }
 }

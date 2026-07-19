@@ -25,7 +25,7 @@ class CacheHelper
 
         // Invalida dashboard também
         self::invalidarDashboard($userId);
-        
+
         // ⬇️ NOVO: Invalida metadados de ações
         self::invalidarMetadados($userId);
     }

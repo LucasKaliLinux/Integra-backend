@@ -2,16 +2,16 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\TipoOrgao;
 use App\Models\OrgaoGoverno;
+use App\Models\TipoOrgao;
+use Illuminate\Database\Seeder;
 
 class OrgaoGovernoSeeder extends Seeder
 {
     public function run(): void
     {
         // ========== FEDERAL ==========
-        
+
         $presidencia = TipoOrgao::where('slug', 'presidencia')->first();
         $ministerio = TipoOrgao::where('slug', 'ministerio')->first();
         $autarquia = TipoOrgao::where('slug', 'autarquia')->first();
@@ -74,7 +74,7 @@ class OrgaoGovernoSeeder extends Seeder
         ];
 
         // ========== ESTADUAL (BAHIA) ==========
-        
+
         $governadoria = TipoOrgao::where('slug', 'governadoria')->first();
         $secretaria = TipoOrgao::where('slug', 'secretaria')->first();
         $fundacao = TipoOrgao::where('slug', 'fundacao')->first();

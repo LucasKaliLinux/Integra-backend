@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->foreignId('deputado_id')->nullable()->after('id')->constrained()->onDelete('cascade');
             $table->dropColumn('titulo_eleitoral'); // Move pra tabela deputados
-            
+
             $table->index(['deputado_id', 'id']);
         });
     }

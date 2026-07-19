@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\OrgaoGoverno;
 
 class UpdateAcaoRequest extends FormRequest
 {
@@ -20,19 +19,19 @@ class UpdateAcaoRequest extends FormRequest
             'orgao_governo_id' => [
                 'sometimes',
                 'integer',
-                Rule::exists('orgaos_governo', 'id')
+                Rule::exists('orgaos_governo', 'id'),
             ],
 
             // Categorias
             'categoria_investimento_id' => [
                 'sometimes',
                 'integer',
-                Rule::exists('categorias_investimento', 'id')
+                Rule::exists('categorias_investimento', 'id'),
             ],
             'tipo_acao_id' => [
                 'sometimes',
                 'integer',
-                Rule::exists('tipos_acao', 'id')
+                Rule::exists('tipos_acao', 'id'),
             ],
 
             // Detalhes da Ação
@@ -41,31 +40,31 @@ class UpdateAcaoRequest extends FormRequest
             'id_municipio' => [
                 'sometimes',
                 'integer',
-                Rule::exists('municipios', 'id_municipio')
+                Rule::exists('municipios', 'id_municipio'),
             ],
             'valor' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
             'ano' => ['sometimes', 'integer', 'digits:4', 'min:1900', 'max:2050'],
             'status_id' => [
                 'sometimes',
                 'integer',
-                Rule::exists('status_acao', 'id')
+                Rule::exists('status_acao', 'id'),
             ],
             'liderancas' => [
                 'nullable',
                 'array',
-                'max:10'
+                'max:10',
             ],
             'liderancas.*' => [
                 'integer',
                 Rule::exists('liderancas', 'id')->where(function ($query) {
                     $query->where('deputado_id', $this->user()->deputado_id)
-                          ->where('id_municipio', $this->id_municipio);
-                })
+                        ->where('id_municipio', $this->id_municipio);
+                }),
             ],
             'observacao' => ['nullable', 'string', 'max:1000'],
 
             // Para update de status
-            'observacao_mudanca' => ['nullable', 'string', 'max:500']
+            'observacao_mudanca' => ['nullable', 'string', 'max:500'],
         ];
     }
 

@@ -36,7 +36,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 12:31:24',
-                'updated_at' => '2026-03-03 12:43:00'
+                'updated_at' => '2026-03-03 12:43:00',
             ],
             [
                 'user_id' => 3,
@@ -47,7 +47,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 12:41:00',
-                'updated_at' => '2026-03-03 12:41:00'
+                'updated_at' => '2026-03-03 12:41:00',
             ],
             [
                 'user_id' => 3,
@@ -58,7 +58,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 12:43:44',
-                'updated_at' => '2026-03-03 12:43:44'
+                'updated_at' => '2026-03-03 12:43:44',
             ],
             [
                 'user_id' => 3,
@@ -69,7 +69,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:25:11',
-                'updated_at' => '2026-03-03 15:25:11'
+                'updated_at' => '2026-03-03 15:25:11',
             ],
             [
                 'user_id' => 3,
@@ -80,7 +80,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:25:29',
-                'updated_at' => '2026-03-03 15:25:29'
+                'updated_at' => '2026-03-03 15:25:29',
             ],
             [
                 'user_id' => 3,
@@ -91,7 +91,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:27:45',
-                'updated_at' => '2026-03-03 15:27:45'
+                'updated_at' => '2026-03-03 15:27:45',
             ],
             [
                 'user_id' => 3,
@@ -102,7 +102,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:29:10',
-                'updated_at' => '2026-03-03 15:29:10'
+                'updated_at' => '2026-03-03 15:29:10',
             ],
             [
                 'user_id' => 3,
@@ -113,7 +113,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:29:42',
-                'updated_at' => '2026-03-03 15:32:47'
+                'updated_at' => '2026-03-03 15:32:47',
             ],
             [
                 'user_id' => 3,
@@ -124,7 +124,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusEmExecucao,
                 'created_at' => '2026-03-03 15:30:29',
-                'updated_at' => '2026-03-03 15:30:48'
+                'updated_at' => '2026-03-03 15:30:48',
             ],
             [
                 'user_id' => 3,
@@ -135,7 +135,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:33:29',
-                'updated_at' => '2026-03-03 15:34:30'
+                'updated_at' => '2026-03-03 15:34:30',
             ],
             [
                 'user_id' => 3,
@@ -146,7 +146,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:34:24',
-                'updated_at' => '2026-03-03 15:34:24'
+                'updated_at' => '2026-03-03 15:34:24',
             ],
             [
                 'user_id' => 3,
@@ -157,7 +157,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:35:00',
-                'updated_at' => '2026-03-03 15:35:00'
+                'updated_at' => '2026-03-03 15:35:00',
             ],
             [
                 'user_id' => 3,
@@ -168,7 +168,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:36:26',
-                'updated_at' => '2026-03-03 15:42:08'
+                'updated_at' => '2026-03-03 15:42:08',
             ],
             [
                 'user_id' => 3,
@@ -179,7 +179,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:42:44',
-                'updated_at' => '2026-03-03 15:50:04'
+                'updated_at' => '2026-03-03 15:50:04',
             ],
             [
                 'user_id' => 3,
@@ -190,7 +190,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:47:05',
-                'updated_at' => '2026-03-03 15:47:05'
+                'updated_at' => '2026-03-03 15:47:05',
             ],
             [
                 'user_id' => 3,
@@ -201,7 +201,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:47:34',
-                'updated_at' => '2026-03-03 15:48:26'
+                'updated_at' => '2026-03-03 15:48:26',
             ],
             [
                 'user_id' => 3,
@@ -212,7 +212,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:49:24',
-                'updated_at' => '2026-03-03 15:49:24'
+                'updated_at' => '2026-03-03 15:49:24',
             ],
             [
                 'user_id' => 3,
@@ -223,7 +223,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:49:52',
-                'updated_at' => '2026-03-03 15:49:52'
+                'updated_at' => '2026-03-03 15:49:52',
             ],
             [
                 'user_id' => 3,
@@ -234,7 +234,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:50:39',
-                'updated_at' => '2026-03-03 15:50:39'
+                'updated_at' => '2026-03-03 15:50:39',
             ],
             [
                 'user_id' => 3,
@@ -245,7 +245,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:55:35',
-                'updated_at' => '2026-03-03 15:55:35'
+                'updated_at' => '2026-03-03 15:55:35',
             ],
             [
                 'user_id' => 3,
@@ -256,7 +256,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:56:00',
-                'updated_at' => '2026-03-03 15:56:00'
+                'updated_at' => '2026-03-03 15:56:00',
             ],
             [
                 'user_id' => 3,
@@ -267,7 +267,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:56:20',
-                'updated_at' => '2026-03-03 15:56:20'
+                'updated_at' => '2026-03-03 15:56:20',
             ],
             [
                 'user_id' => 3,
@@ -278,7 +278,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:58:52',
-                'updated_at' => '2026-03-03 15:58:52'
+                'updated_at' => '2026-03-03 15:58:52',
             ],
             [
                 'user_id' => 3,
@@ -289,7 +289,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:59:13',
-                'updated_at' => '2026-03-03 15:59:13'
+                'updated_at' => '2026-03-03 15:59:13',
             ],
             [
                 'user_id' => 3,
@@ -300,7 +300,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 15:59:43',
-                'updated_at' => '2026-03-03 15:59:43'
+                'updated_at' => '2026-03-03 15:59:43',
             ],
             [
                 'user_id' => 3,
@@ -311,7 +311,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:00:14',
-                'updated_at' => '2026-03-03 16:00:14'
+                'updated_at' => '2026-03-03 16:00:14',
             ],
             [
                 'user_id' => 3,
@@ -322,7 +322,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:01:02',
-                'updated_at' => '2026-03-03 16:01:02'
+                'updated_at' => '2026-03-03 16:01:02',
             ],
             [
                 'user_id' => 3,
@@ -333,7 +333,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:01:40',
-                'updated_at' => '2026-03-03 16:01:40'
+                'updated_at' => '2026-03-03 16:01:40',
             ],
             [
                 'user_id' => 3,
@@ -344,7 +344,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:02:25',
-                'updated_at' => '2026-03-03 16:02:25'
+                'updated_at' => '2026-03-03 16:02:25',
             ],
             [
                 'user_id' => 3,
@@ -355,7 +355,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:03:28',
-                'updated_at' => '2026-03-03 16:03:28'
+                'updated_at' => '2026-03-03 16:03:28',
             ],
             [
                 'user_id' => 3,
@@ -366,7 +366,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:03:50',
-                'updated_at' => '2026-03-03 16:03:50'
+                'updated_at' => '2026-03-03 16:03:50',
             ],
             [
                 'user_id' => 3,
@@ -377,7 +377,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-03 16:04:16',
-                'updated_at' => '2026-03-03 16:04:16'
+                'updated_at' => '2026-03-03 16:04:16',
             ],
             [
                 'user_id' => 3,
@@ -388,7 +388,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 10:24:35',
-                'updated_at' => '2026-03-06 10:24:35'
+                'updated_at' => '2026-03-06 10:24:35',
             ],
             [
                 'user_id' => 3,
@@ -399,7 +399,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusEmExecucao,
                 'created_at' => '2026-03-06 10:25:41',
-                'updated_at' => '2026-03-06 10:25:41'
+                'updated_at' => '2026-03-06 10:25:41',
             ],
             [
                 'user_id' => 3,
@@ -410,7 +410,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 10:26:34',
-                'updated_at' => '2026-03-06 10:36:08'
+                'updated_at' => '2026-03-06 10:36:08',
             ],
             [
                 'user_id' => 3,
@@ -421,7 +421,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 10:36:53',
-                'updated_at' => '2026-03-06 10:36:53'
+                'updated_at' => '2026-03-06 10:36:53',
             ],
             [
                 'user_id' => 3,
@@ -432,7 +432,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusEmExecucao,
                 'created_at' => '2026-03-06 10:39:01',
-                'updated_at' => '2026-03-06 10:39:01'
+                'updated_at' => '2026-03-06 10:39:01',
             ],
             [
                 'user_id' => 3,
@@ -443,7 +443,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusEmExecucao,
                 'created_at' => '2026-03-06 10:39:42',
-                'updated_at' => '2026-03-06 10:39:42'
+                'updated_at' => '2026-03-06 10:39:42',
             ],
             [
                 'user_id' => 3,
@@ -454,7 +454,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 10:40:40',
-                'updated_at' => '2026-03-06 10:40:40'
+                'updated_at' => '2026-03-06 10:40:40',
             ],
             [
                 'user_id' => 3,
@@ -465,7 +465,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 10:41:25',
-                'updated_at' => '2026-03-06 10:41:25'
+                'updated_at' => '2026-03-06 10:41:25',
             ],
             [
                 'user_id' => 3,
@@ -476,7 +476,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:00:01',
-                'updated_at' => '2026-03-06 11:00:01'
+                'updated_at' => '2026-03-06 11:00:01',
             ],
             [
                 'user_id' => 3,
@@ -487,7 +487,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:01:34',
-                'updated_at' => '2026-03-06 11:01:49'
+                'updated_at' => '2026-03-06 11:01:49',
             ],
             [
                 'user_id' => 3,
@@ -498,7 +498,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:02:55',
-                'updated_at' => '2026-03-06 11:02:55'
+                'updated_at' => '2026-03-06 11:02:55',
             ],
             [
                 'user_id' => 3,
@@ -509,7 +509,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:03:59',
-                'updated_at' => '2026-03-06 11:03:59'
+                'updated_at' => '2026-03-06 11:03:59',
             ],
             [
                 'user_id' => 3,
@@ -520,7 +520,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:04:33',
-                'updated_at' => '2026-03-06 11:04:33'
+                'updated_at' => '2026-03-06 11:04:33',
             ],
             [
                 'user_id' => 3,
@@ -531,7 +531,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:05:08',
-                'updated_at' => '2026-03-06 11:05:08'
+                'updated_at' => '2026-03-06 11:05:08',
             ],
             [
                 'user_id' => 3,
@@ -542,7 +542,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:12:52',
-                'updated_at' => '2026-03-06 11:12:52'
+                'updated_at' => '2026-03-06 11:12:52',
             ],
             [
                 'user_id' => 3,
@@ -553,7 +553,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:13:29',
-                'updated_at' => '2026-03-06 11:13:29'
+                'updated_at' => '2026-03-06 11:13:29',
             ],
             [
                 'user_id' => 3,
@@ -564,7 +564,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:14:10',
-                'updated_at' => '2026-03-06 11:14:10'
+                'updated_at' => '2026-03-06 11:14:10',
             ],
             [
                 'user_id' => 3,
@@ -575,7 +575,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:15:08',
-                'updated_at' => '2026-03-06 11:15:08'
+                'updated_at' => '2026-03-06 11:15:08',
             ],
             [
                 'user_id' => 3,
@@ -586,7 +586,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:16:58',
-                'updated_at' => '2026-03-06 11:16:58'
+                'updated_at' => '2026-03-06 11:16:58',
             ],
             [
                 'user_id' => 3,
@@ -597,7 +597,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:18:05',
-                'updated_at' => '2026-03-06 11:18:05'
+                'updated_at' => '2026-03-06 11:18:05',
             ],
             [
                 'user_id' => 3,
@@ -608,7 +608,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:19:03',
-                'updated_at' => '2026-03-06 11:19:03'
+                'updated_at' => '2026-03-06 11:19:03',
             ],
             [
                 'user_id' => 3,
@@ -619,7 +619,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-06 11:20:06',
-                'updated_at' => '2026-03-06 11:20:06'
+                'updated_at' => '2026-03-06 11:20:06',
             ],
             [
                 'user_id' => 3,
@@ -630,7 +630,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => 2026,
                 'status_id' => $statusSolicitado,
                 'created_at' => '2026-03-17 10:52:43',
-                'updated_at' => '2026-03-17 10:52:43'
+                'updated_at' => '2026-03-17 10:52:43',
             ],
         ];
 
@@ -653,7 +653,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'ano' => $acao['ano'],
                 'observacao' => null,
                 'created_at' => $acao['created_at'],
-                'updated_at' => $acao['updated_at']
+                'updated_at' => $acao['updated_at'],
             ]);
 
             // Cria histórico
@@ -662,7 +662,7 @@ class MigrateOldAcoesSeeder extends Seeder
                 'status_id' => $acao['status_id'],
                 'user_id' => $acao['user_id'],
                 'observacao' => 'Ação migrada do sistema antigo - NECESSITA ATUALIZAÇÃO',
-                'created_at' => $acao['created_at']
+                'created_at' => $acao['created_at'],
             ]);
         }
 

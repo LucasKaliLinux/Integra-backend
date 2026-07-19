@@ -2,15 +2,15 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
         // 1️⃣ Migra ações que JÁ TEM liderança
-        DB::statement("
+        DB::statement('
             INSERT INTO acao_lideranca (acao_id, lideranca_id, created_at, updated_at)
             SELECT 
                 id as acao_id,
@@ -19,7 +19,7 @@ return new class extends Migration
                 updated_at
             FROM acoes
             WHERE lideranca_solicitante_id IS NOT NULL
-        ");
+        ');
 
         // 2️⃣ Remove coluna antiga (depois de migrar!)
         Schema::table('acoes', function (Blueprint $table) {
@@ -40,7 +40,7 @@ return new class extends Migration
         });
 
         // Restaura primeiro relacionamento
-        DB::statement("
+        DB::statement('
             UPDATE acoes a
             INNER JOIN (
                 SELECT acao_id, MIN(lideranca_id) as lideranca_id
@@ -48,6 +48,6 @@ return new class extends Migration
                 GROUP BY acao_id
             ) al ON al.acao_id = a.id
             SET a.lideranca_solicitante_id = al.lideranca_id
-        ");
+        ');
     }
 };
